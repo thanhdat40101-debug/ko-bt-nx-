@@ -123,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             renderTables();
             
+            // Render realtime màn hình Quầy Bar
+            renderBarDashboard();
+            
             // Cập nhật lại Modal hóa đơn chi tiết nếu đang mở
             if (selectedTableForBill) {
                 if (tableOrders[selectedTableForBill]) {
@@ -185,25 +188,43 @@ document.addEventListener('DOMContentLoaded', () => {
     window.selectRole = function(role) {
         currentRole = role;
         const btnStaff = document.getElementById('btn-role-staff');
+        const btnBar = document.getElementById('btn-role-bar');
         const btnAdmin = document.getElementById('btn-role-admin');
         const pinField = document.getElementById('pin-field-container');
+        const pinLabel = pinField?.querySelector('label');
         const submitBtn = document.getElementById('btn-submit-login');
         
+        // Reset styles for all tabs
+        const tabs = [btnStaff, btnBar, btnAdmin];
+        tabs.forEach(t => {
+            if (t) {
+                t.style.background = 'transparent';
+                t.style.color = '#475569';
+                t.classList.remove('active');
+            }
+        });
+        
+        const activeBtn = role === 'staff' ? btnStaff : (role === 'bar' ? btnBar : btnAdmin);
+        if (activeBtn) {
+            activeBtn.style.background = 'white';
+            activeBtn.style.color = '#0284c7';
+            activeBtn.classList.add('active');
+        }
+        
         if (role === 'staff') {
-            if (btnStaff) btnStaff.style.background = 'white';
-            if (btnStaff) btnStaff.style.color = '#0284c7';
-            if (btnAdmin) btnAdmin.style.background = 'transparent';
-            if (btnAdmin) btnAdmin.style.color = '#475569';
             if (pinField) pinField.style.display = 'none';
             if (submitBtn) submitBtn.innerText = 'Đăng nhập Nhân viên ➔';
             enteredPin = '';
             updatePinDots();
-        } else {
-            if (btnAdmin) btnAdmin.style.background = 'white';
-            if (btnAdmin) btnAdmin.style.color = '#0284c7';
-            if (btnStaff) btnStaff.style.background = 'transparent';
-            if (btnStaff) btnStaff.style.color = '#475569';
+        } else if (role === 'bar') {
             if (pinField) pinField.style.display = 'flex';
+            if (pinLabel) pinLabel.innerText = 'MÃ PIN QUẦY BAR (5555)';
+            if (submitBtn) submitBtn.innerText = 'Đăng nhập Quầy Bar ➔';
+            enteredPin = '';
+            updatePinDots();
+        } else {
+            if (pinField) pinField.style.display = 'flex';
+            if (pinLabel) pinLabel.innerText = 'MÃ PIN ADMIN (6666)';
             if (submitBtn) submitBtn.innerText = 'Đăng nhập Admin ➔';
             enteredPin = '';
             updatePinDots();
@@ -256,6 +277,22 @@ document.addEventListener('DOMContentLoaded', () => {
             applyRoleSettings();
             const loginOverlay = document.getElementById('login-overlay');
             if (loginOverlay) loginOverlay.style.display = 'none';
+        } else if (currentRole === 'bar') {
+            if (enteredPin === '5555') {
+                sessionStorage.setItem('goat_user_role', 'bar');
+                applyRoleSettings();
+                const loginOverlay = document.getElementById('login-overlay');
+                if (loginOverlay) loginOverlay.style.display = 'none';
+                enteredPin = '';
+                updatePinDots();
+            } else {
+                if (errorMsg) {
+                    errorMsg.innerText = '❌ Mã PIN Quầy Bar không chính xác!';
+                    errorMsg.style.display = 'block';
+                }
+                enteredPin = '';
+                updatePinDots();
+            }
         } else {
             if (enteredPin === '6666') {
                 sessionStorage.setItem('goat_user_role', 'admin');
@@ -291,8 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const role = sessionStorage.getItem('goat_user_role') || 'staff';
         const badge = document.getElementById('user-badge');
         if (badge) {
-            badge.innerText = role === 'admin' ? 'Admin' : 'Nhân viên';
-            badge.className = 'user-badge' + (role === 'admin' ? ' admin' : '');
+            badge.innerText = role === 'admin' ? 'Admin' : (role === 'bar' ? 'Quầy Bar' : 'Nhân viên');
+            badge.className = 'user-badge' + (role === 'admin' ? ' admin' : (role === 'bar' ? ' bar' : ''));
         }
         
         const dashboardNavBtn = document.getElementById('nav-dashboard');
@@ -305,30 +342,42 @@ document.addEventListener('DOMContentLoaded', () => {
             items.forEach(item => {
                 const label = item.querySelector('.menu-label')?.innerText || '';
                 if (label.includes('Cấu hình in') || label.includes('Cấu hình Thanh toán')) {
-                    item.style.display = role === 'admin' ? 'flex' : 'none';
+                     item.style.display = role === 'admin' ? 'flex' : 'none';
                 }
             });
         }
 
-        if (role === 'admin') {
-            if (dashboardNavBtn) dashboardNavBtn.style.display = 'flex';
-            if (clearHistoryBtn) clearHistoryBtn.style.display = 'block';
+        // Tự động chuyển đổi giao diện dựa trên vai trò
+        if (role === 'bar') {
+            document.body.classList.add('role-bar-active');
             
-            const quickAddBtn = document.querySelector('.btn-toggle-add');
-            if (quickAddBtn) quickAddBtn.style.display = 'flex';
-            
-            window.switchTab('dashboard-section');
-        } else {
             if (dashboardNavBtn) dashboardNavBtn.style.display = 'none';
             if (clearHistoryBtn) clearHistoryBtn.style.display = 'none';
             
-            const quickAddBtn = document.querySelector('.btn-toggle-add');
-            if (quickAddBtn) quickAddBtn.style.display = 'none';
+            window.switchTab('bar-section');
+        } else {
+            document.body.classList.remove('role-bar-active');
             
-            const quickAddForm = document.getElementById('quick-add-form');
-            if (quickAddForm) quickAddForm.style.display = 'none';
+            if (role === 'admin') {
+                if (dashboardNavBtn) dashboardNavBtn.style.display = 'flex';
+                if (clearHistoryBtn) clearHistoryBtn.style.display = 'block';
+                
+                const quickAddBtn = document.querySelector('.btn-toggle-add');
+                if (quickAddBtn) quickAddBtn.style.display = 'flex';
+                
+                window.switchTab('dashboard-section');
+            } else {
+                if (dashboardNavBtn) dashboardNavBtn.style.display = 'none';
+                if (clearHistoryBtn) clearHistoryBtn.style.display = 'none';
+                
+                const quickAddBtn = document.querySelector('.btn-toggle-add');
+                if (quickAddBtn) quickAddBtn.style.display = 'none';
+                
+                const quickAddForm = document.getElementById('quick-add-form');
+                if (quickAddForm) quickAddForm.style.display = 'none';
 
-            window.switchTab('pos-section');
+                window.switchTab('pos-section');
+            }
         }
     }
 
@@ -404,13 +453,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // Gộp thêm món trực tiếp trên Firestore
             finalItems = JSON.parse(JSON.stringify(tableOrders[num].items));
             currentCart.forEach(newItem => {
-                const sameItem = finalItems.find(i => i.name === newItem.name);
-                if (sameItem) sameItem.qty += newItem.qty;
-                else finalItems.push(JSON.parse(JSON.stringify(newItem)));
+                // Chỉ gộp với các món cùng tên và cùng có trạng thái 'pending' để không phá hỏng trạng thái làm món
+                const sameItem = finalItems.find(i => i.name === newItem.name && (i.status || 'pending') === 'pending');
+                if (sameItem) {
+                    sameItem.qty += newItem.qty;
+                } else {
+                    const itemCopy = JSON.parse(JSON.stringify(newItem));
+                    itemCopy.status = 'pending';
+                    itemCopy.orderedAt = new Date();
+                    finalItems.push(itemCopy);
+                }
             });
             finalTotal = tableOrders[num].total + cartTotal;
         } else {
             finalItems = JSON.parse(JSON.stringify(currentCart));
+            finalItems.forEach(it => {
+                it.status = 'pending';
+                it.orderedAt = new Date();
+            });
             finalTotal = cartTotal;
         }
 
@@ -553,11 +613,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UI HELPERS ---
     window.switchTab = function(tabId) {
         const role = sessionStorage.getItem('goat_user_role') || 'staff';
-        if (role === 'staff' && tabId === 'dashboard-section') {
-            return; // Khóa màn hình Dashboard với Nhân viên
+        
+        // Khóa màn hình với từng vai trò cụ thể
+        if (tabId === 'dashboard-section' && (role === 'staff' || role === 'bar')) {
+            return; 
+        }
+        if (role === 'bar' && tabId !== 'bar-section') {
+            return; // Quầy Bar chỉ được phép xem màn hình Bar
         }
 
-        const sections = ['dashboard-section', 'pos-section', 'tables-section', 'menu-section', 'print-config-section', 'payment-config-section', 'order-history-section', 'shift-management-section'];
+        const sections = ['dashboard-section', 'pos-section', 'tables-section', 'menu-section', 'print-config-section', 'payment-config-section', 'order-history-section', 'shift-management-section', 'bar-section'];
         sections.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
@@ -769,9 +834,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const order = tableOrders[id]; if (!order) return;
         selectedTableForBill = id;
         document.getElementById('bill-sheet-title').innerText = `Chi tiết Bàn ${id}`;
-        document.getElementById('bill-items-list').innerHTML = order.items.map(it => `
-            <div class="cart-item-row"><div class="cart-item-info"><span>${it.name}</span><span>x${it.qty}</span></div><span>${(it.price*it.qty).toLocaleString()} đ</span></div>
-        `).join('');
+        document.getElementById('bill-items-list').innerHTML = order.items.map(it => {
+            const status = it.status || 'pending';
+            let badgeLabel = '⏳ Đang chờ';
+            let badgeClass = 'pending';
+            if (status === 'preparing') {
+                badgeLabel = '🍹 Đang làm';
+                badgeClass = 'preparing';
+            } else if (status === 'completed') {
+                badgeLabel = '✅ Xong';
+                badgeClass = 'completed';
+            }
+            
+            return `
+                <div class="cart-item-row" style="align-items: center;">
+                    <div class="cart-item-info">
+                        <span style="font-weight: 700; color: #1e293b;">${it.name}</span>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <span style="font-size: 12px; color: #64748b; font-weight: 600;">x${it.qty}</span>
+                            <span class="waiter-status-badge ${badgeClass}">${badgeLabel}</span>
+                        </div>
+                    </div>
+                    <span style="font-weight: 800; color: #1e293b;">${(it.price * it.qty).toLocaleString()} đ</span>
+                </div>
+            `;
+        }).join('');
         document.getElementById('bill-total-amount').innerText = `${order.total.toLocaleString()} đ`;
         document.getElementById('modal-overlay').style.display = 'block';
         const sheet = document.getElementById('bill-detail-sheet');
@@ -1098,6 +1185,147 @@ document.addEventListener('DOMContentLoaded', () => {
     window.testPrint = function() {
         alert("🖨️ Đang in thử hóa đơn khổ " + printSettings.paperSize + "mm ra máy in...");
         window.print();
+    };
+
+    // --- BAR/KITCHEN REALTIME DASHBOARD LOGIC ---
+    let barActiveFilter = 'pending';
+    
+    window.switchBarTab = function(filter) {
+        barActiveFilter = filter;
+        
+        const btnPending = document.getElementById('bar-tab-pending');
+        const btnHistory = document.getElementById('bar-tab-history');
+        
+        if (btnPending) {
+            btnPending.classList.toggle('active', filter === 'pending');
+            btnPending.style.background = filter === 'pending' ? 'white' : 'transparent';
+            btnPending.style.color = filter === 'pending' ? '#0284c7' : '#475569';
+        }
+        
+        if (btnHistory) {
+            btnHistory.classList.toggle('active', filter === 'history');
+            btnHistory.style.background = filter === 'history' ? 'white' : 'transparent';
+            btnHistory.style.color = filter === 'history' ? '#0284c7' : '#475569';
+        }
+        
+        renderBarDashboard();
+    };
+
+    window.renderBarDashboard = function() {
+        const grid = document.getElementById('bar-grid');
+        if (!grid) return;
+
+        let hasAnyItems = false;
+        let html = '';
+        
+        // Sắp xếp các bàn có order theo số bàn tăng dần
+        Object.keys(tableOrders).sort((a, b) => parseInt(a) - parseInt(b)).forEach(tableId => {
+            const order = tableOrders[tableId];
+            if (!order || !order.items) return;
+            
+            let filteredItems = [];
+            if (barActiveFilter === 'pending') {
+                filteredItems = order.items.filter(it => !it.status || it.status === 'pending' || it.status === 'preparing');
+            } else {
+                filteredItems = order.items.filter(it => it.status === 'completed');
+            }
+            
+            if (filteredItems.length > 0) {
+                hasAnyItems = true;
+                
+                // Tính thời gian trôi qua từ lần cập nhật gần nhất
+                const updateDate = order.updatedAt?.seconds ? new Date(order.updatedAt.seconds * 1000) : new Date();
+                const elapsedMins = Math.round((new Date() - updateDate) / 60000);
+                const timeStr = elapsedMins > 0 ? `${elapsedMins} phút trước` : 'Vừa xong';
+                
+                html += `
+                    <div class="bar-order-card">
+                        <div class="bar-card-header">
+                            <span class="bar-table-title">BÀN ${tableId}</span>
+                            <span class="bar-time"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+                        </div>
+                        <div class="bar-items-list">
+                            ${filteredItems.map(it => {
+                                const status = it.status || 'pending';
+                                let badgeLabel = 'Đang chờ';
+                                let badgeClass = 'pending';
+                                let btnHtml = '';
+                                
+                                if (status === 'pending') {
+                                    badgeLabel = '⏳ Đang chờ';
+                                    btnHtml = `
+                                        <button class="bar-action-btn start" onclick="updateItemBarStatus(${tableId}, '${it.name}', 'pending', 'preparing')">
+                                            <i class="fa-solid fa-mug-hot"></i> Làm món
+                                        </button>
+                                    `;
+                                } else if (status === 'preparing') {
+                                    badgeLabel = '🍹 Đang làm';
+                                    badgeClass = 'preparing';
+                                    btnHtml = `
+                                        <button class="bar-action-btn done" onclick="updateItemBarStatus(${tableId}, '${it.name}', 'preparing', 'completed')">
+                                            <i class="fa-solid fa-check"></i> Xong
+                                        </button>
+                                    `;
+                                } else if (status === 'completed') {
+                                    badgeLabel = '✅ Xong';
+                                    badgeClass = 'completed';
+                                }
+                                
+                                return `
+                                    <div class="bar-item-row">
+                                        <div class="bar-item-info">
+                                            <span class="bar-item-name">${it.name}</span>
+                                            <span class="bar-item-qty">Số lượng: ${it.qty}</span>
+                                        </div>
+                                        <div class="bar-item-right">
+                                            <span class="bar-status-badge ${badgeClass}">${badgeLabel}</span>
+                                            ${btnHtml}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        if (!hasAnyItems) {
+            html = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8; background: white; border-radius: 16px; border: 1px dashed #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.02);">
+                    <span style="font-size: 48px; display: block; margin-bottom: 16px;">☕</span>
+                    <p style="font-weight: 700; font-size: 16px; color: #64748b; margin-bottom: 4px;">Quầy pha chế trống</p>
+                    <p style="font-size: 13px; color: #94a3b8;">Không có món nào cần thực hiện lúc này.</p>
+                </div>
+            `;
+        }
+        
+        grid.innerHTML = html;
+    };
+
+    window.updateItemBarStatus = async function(tableId, itemName, currentStatus, newStatus) {
+        const order = tableOrders[tableId];
+        if (!order || !order.items) return;
+        
+        // Cập nhật trạng thái của món được bấm chọn
+        const updatedItems = order.items.map(it => {
+            const itStatus = it.status || 'pending';
+            if (it.name === itemName && itStatus === currentStatus) {
+                return { ...it, status: newStatus };
+            }
+            return it;
+        });
+        
+        try {
+            await updateDoc(doc(db, 'tables', `table_${tableId}`), {
+                items: updatedItems,
+                updatedAt: new Date()
+            });
+            console.log(`Đã cập nhật Bàn ${tableId} - ${itemName} thành ${newStatus}`);
+        } catch (err) {
+            console.error("Lỗi khi cập nhật trạng thái pha chế:", err);
+            alert("Lỗi kết nối cơ sở dữ liệu online!");
+        }
     };
 
     // Khởi chạy ứng dụng

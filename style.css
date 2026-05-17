@@ -1663,3 +1663,211 @@ input:checked + .clean-slider:before {
     box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.2);
 }
 
+/* --- OVERRIDE CHUYỂN ĐỔI LAYOUT SANG MÁY TÍNH KHI BAR ĐĂNG NHẬP --- */
+body.role-bar-active .app-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    background-color: #f8fafc;
+}
+
+body.role-bar-active .main-content {
+    max-width: 100% !important;
+    padding: 24px !important;
+    margin-top: 80px !important;
+    margin-bottom: 0 !important;
+}
+
+body.role-bar-active .bottom-nav {
+    display: none !important;
+}
+
+/* --- BAR WORKSPACE GRID & CARDS --- */
+.bar-screen {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 16px 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.bar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.bar-order-card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.bar-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 10px;
+}
+
+.bar-table-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.bar-time {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.bar-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bar-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.bar-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bar-item-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.bar-item-qty {
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.bar-item-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bar-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bar-status-badge.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.bar-status-badge.preparing {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+.bar-status-badge.completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.bar-action-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bar-action-btn.start {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.bar-action-btn.start:hover {
+    background: #bae6fd;
+    transform: scale(1.03);
+}
+
+.bar-action-btn.done {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.bar-action-btn.done:hover {
+    background: #bbf7d0;
+    transform: scale(1.03);
+}
+
+/* --- WAITER UI STATUS BADGES --- */
+.waiter-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    display: inline-block;
+}
+.waiter-status-badge.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+.waiter-status-badge.preparing {
+    background: #ffedd5;
+    color: #ea580c;
+}
+.waiter-status-badge.completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+
