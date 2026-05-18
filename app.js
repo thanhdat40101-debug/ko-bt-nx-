@@ -121,6 +121,124 @@ document.addEventListener('DOMContentLoaded', () => {
         return role;
     }
 
+    // --- DATABASE SEEDER FOR 80 AHA CAFE ITEMS ---
+    async function seedDefaultAhaMenu() {
+        console.log("🌱 Thực đơn trống hoặc thiếu. Đang tự động nạp 80 món Aha Cafe lên Firestore...");
+        const defaultAhaMenu = [
+            { "name": "Cà phê đen", "price": 33000, "category": "Cà Phê" },
+            { "name": "Cà phê sữa", "price": 35000, "category": "Cà Phê" },
+            { "name": "Bạc xỉu", "price": 40000, "category": "Cà Phê" },
+            { "name": "Cà phê cốt dừa (đá)", "price": 45000, "category": "Cà Phê" },
+            { "name": "Cà phê kem Aha", "price": 65000, "category": "Cà Phê" },
+            { "name": "Cà Phê Đen Pha Máy", "price": 33000, "category": "Cà Phê" },
+            { "name": "Cà Phê Sữa Pha Máy", "price": 35000, "category": "Cà Phê" },
+            { "name": "Espresso", "price": 33000, "category": "Cà Phê" },
+            { "name": "Americano (nóng/đá)", "price": 35000, "category": "Cà Phê" },
+            { "name": "Cappuccino (nóng/đá)", "price": 45000, "category": "Cà Phê" },
+            { "name": "Latte (nóng/đá)", "price": 45000, "category": "Cà Phê" },
+            { "name": "Mocha (nóng/đá)", "price": 50000, "category": "Cà Phê" },
+            { "name": "Cà phê muối", "price": 45000, "category": "Cà Phê" },
+            { "name": "Cà Phê Hạnh Nhân (Nóng)", "price": 55000, "category": "Cà Phê" },
+            { "name": "Cà Phê Hạnh Nhân (Đá)", "price": 55000, "category": "Cà Phê" },
+            { "name": "Cà phê đậu xanh", "price": 55000, "category": "Cà Phê" },
+
+            { "name": "Trà xoài ô long", "price": 39000, "category": "Trà" },
+            { "name": "Trà sữa ô long đường đen", "price": 45000, "category": "Trà" },
+            { "name": "Trà sữa ô long matcha", "price": 45000, "category": "Trà" },
+            { "name": "Trà táo bạc hà", "price": 49000, "category": "Trà" },
+            { "name": "Trà đào Hibicus", "price": 49000, "category": "Trà" },
+            { "name": "Trà cam quế mật ong", "price": 39000, "category": "Trà" },
+            { "name": "Trà hoa cúc táo đỏ", "price": 39000, "category": "Trà" },
+            { "name": "Trà gừng sen bí đao", "price": 39000, "category": "Trà" },
+            { "name": "Trà gừng vải", "price": 39000, "category": "Trà" },
+            { "name": "Trà lài lê hoa cúc", "price": 45000, "category": "Trà" },
+            { "name": "Trà olong hương mộc", "price": 39000, "category": "Trà" },
+            { "name": "Hồng trà (đá / nóng)", "price": 30000, "category": "Trà" },
+            { "name": "Hồng trà sữa (đá / nóng)", "price": 35000, "category": "Trà" },
+            { "name": "Trà hoa quả nhiệt đới (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà vải Aha (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà sen Aha (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà đào Aha (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà ổi hồng (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà đào cam sả (đá)", "price": 55000, "category": "Trà" },
+            { "name": "Trà Ô Long Lài Sữa Trân Châu Hoàng Gia (Đá)", "price": 55000, "category": "Trà" },
+            { "name": "Trà Ô Long Lài Sữa (Nóng)", "price": 55000, "category": "Trà" },
+            { "name": "Trà lá nếp", "price": 55000, "category": "Trà" },
+            { "name": "Trà xoài sữa lắc", "price": 55000, "category": "Trà" },
+            { "name": "Trà Ô Long Yến Mạch (Đá)", "price": 55000, "category": "Trà" },
+
+            { "name": "Chocolate đá xay", "price": 50000, "category": "Đá Xay" },
+            { "name": "Matcha đá xay", "price": 50000, "category": "Đá Xay" },
+            { "name": "Bạc hà sôcôla", "price": 50000, "category": "Đá Xay" },
+            { "name": "Cookies choco", "price": 55000, "category": "Đá Xay" },
+
+            { "name": "Hướng dương", "price": 20000, "category": "Đồ Ăn Vặt" },
+
+            { "name": "Bơ Già Dừa Non (Đá)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dừa Non Kem Xoài AHA", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Bơ Già Kem Dừa AHA", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Matcha Xoài", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chocolate Yến Mạch (Nóng)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Matcha Hạnh Nhân (Nóng)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chocolate Yến Mạch (Đá)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Matcha Hạnh Nhân (Đá)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố xoài và kem", "price": 49000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua kem dâu", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Rau má đậu xanh", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Đậu xanh kem dừa", "price": 49000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chanh tươi", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chanh leo", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Ổi ép", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dưa hấu ép", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dứa ép", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dừa xiêm", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Cam vắt", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Táo ép", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Nước bưởi ép", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dâu tây kem xoài", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Phúc bồn tử kem vani", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Hoa quả dầm kem dừa", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố xoài", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố dừa xiêm", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố chanh tuyết", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Hoa quả dầm sữa chua", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua đá", "price": 30000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua cà phê", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua cacao", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua chanh leo", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Cacao (nóng/đá)", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Bia Sài Gòn", "price": 30000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Nước ngọt", "price": 25000, "category": "Sinh Tố & Nước Ép" }
+        ];
+
+        try {
+            let batch = writeBatch(db);
+            let count = 0;
+            for (let i = 0; i < defaultAhaMenu.length; i++) {
+                const item = defaultAhaMenu[i];
+                const docRef = doc(db, 'menu', item.name);
+                batch.set(docRef, {
+                    name: item.name,
+                    price: item.price,
+                    category: item.category,
+                    createdAt: new Date()
+                });
+                count++;
+                if (count >= 400) {
+                    await batch.commit();
+                    batch = writeBatch(db);
+                    count = 0;
+                }
+            }
+            if (count > 0) {
+                await batch.commit();
+            }
+            console.log("🌱 Đã nạp thành công 80 món Aha Cafe lên Firestore!");
+        } catch (err) {
+            console.error("Lỗi khi seed thực đơn lên Firestore:", err);
+        }
+    }
+
     // --- INITIALIZATION ---
     window.initApp = function() {
         console.log("⚡ Đang khởi tạo ứng dụng (Firebase Firestore Realtime Mode)...");
@@ -203,12 +321,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 5. Lắng nghe danh mục món ăn tùy chỉnh realtime từ Firestore
-        onSnapshot(collection(db, 'menu'), (querySnapshot) => {
+        onSnapshot(collection(db, 'menu'), async (querySnapshot) => {
             menuItems = [];
             querySnapshot.forEach((doc) => {
-                menuItems.push(doc.data());
+                const data = doc.data();
+                if (data && data.name) {
+                    menuItems.push(data);
+                }
             });
-            renderProducts(currentCategory);
+            
+            // Nếu Firestore trống (hoặc có ít hơn 5 món), tự động nạp 80 món Aha Cafe
+            if (menuItems.length < 5) {
+                await seedDefaultAhaMenu();
+            } else {
+                renderProducts(currentCategory);
+            }
         });
 
         // 6. Lắng nghe lịch sử đơn hàng realtime từ Firestore (sắp xếp thời gian mới nhất)
@@ -1196,17 +1323,100 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         
         let items = [
-            { name: 'Phê La', price: 45000, category: 'Cà Phê' },
-            { name: 'Nâu Đá', price: 35000, category: 'Cà Phê' },
-            { name: 'Đen Đá', price: 30000, category: 'Cà Phê' },
-            { name: 'Bạc Xỉu', price: 40000, category: 'Cà Phê' },
-            { name: 'Trà Đào Cam Sả', price: 45000, category: 'Trà Trái Cây' },
-            { name: 'Trà Vải', price: 45000, category: 'Trà Trái Cây' },
-            { name: 'Matcha Đá Xay', price: 55000, category: 'Đá Xay' },
-            { name: 'Cookie Đá Xay', price: 55000, category: 'Đá Xay' }
+            { "name": "Cà phê đen", "price": 33000, "category": "Cà Phê" },
+            { "name": "Cà phê sữa", "price": 35000, "category": "Cà Phê" },
+            { "name": "Bạc xỉu", "price": 40000, "category": "Cà Phê" },
+            { "name": "Cà phê cốt dừa (đá)", "price": 45000, "category": "Cà Phê" },
+            { "name": "Cà phê kem Aha", "price": 65000, "category": "Cà Phê" },
+            { "name": "Cà Phê Đen Pha Máy", "price": 33000, "category": "Cà Phê" },
+            { "name": "Cà Phê Sữa Pha Máy", "price": 35000, "category": "Cà Phê" },
+            { "name": "Espresso", "price": 33000, "category": "Cà Phê" },
+            { "name": "Americano (nóng/đá)", "price": 35000, "category": "Cà Phê" },
+            { "name": "Cappuccino (nóng/đá)", "price": 45000, "category": "Cà Phê" },
+            { "name": "Latte (nóng/đá)", "price": 45000, "category": "Cà Phê" },
+            { "name": "Mocha (nóng/đá)", "price": 50000, "category": "Cà Phê" },
+            { "name": "Cà phê muối", "price": 45000, "category": "Cà Phê" },
+            { "name": "Cà Phê Hạnh Nhân (Nóng)", "price": 55000, "category": "Cà Phê" },
+            { "name": "Cà Phê Hạnh Nhân (Đá)", "price": 55000, "category": "Cà Phê" },
+            { "name": "Cà phê đậu xanh", "price": 55000, "category": "Cà Phê" },
+
+            { "name": "Trà xoài ô long", "price": 39000, "category": "Trà" },
+            { "name": "Trà sữa ô long đường đen", "price": 45000, "category": "Trà" },
+            { "name": "Trà sữa ô long matcha", "price": 45000, "category": "Trà" },
+            { "name": "Trà táo bạc hà", "price": 49000, "category": "Trà" },
+            { "name": "Trà đào Hibicus", "price": 49000, "category": "Trà" },
+            { "name": "Trà cam quế mật ong", "price": 39000, "category": "Trà" },
+            { "name": "Trà hoa cúc táo đỏ", "price": 39000, "category": "Trà" },
+            { "name": "Trà gừng sen bí đao", "price": 39000, "category": "Trà" },
+            { "name": "Trà gừng vải", "price": 39000, "category": "Trà" },
+            { "name": "Trà lài lê hoa cúc", "price": 45000, "category": "Trà" },
+            { "name": "Trà olong hương mộc", "price": 39000, "category": "Trà" },
+            { "name": "Hồng trà (đá / nóng)", "price": 30000, "category": "Trà" },
+            { "name": "Hồng trà sữa (đá / nóng)", "price": 35000, "category": "Trà" },
+            { "name": "Trà hoa quả nhiệt đới (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà vải Aha (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà sen Aha (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà đào Aha (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà ổi hồng (đá)", "price": 45000, "category": "Trà" },
+            { "name": "Trà đào cam sả (đá)", "price": 55000, "category": "Trà" },
+            { "name": "Trà Ô Long Lài Sữa Trân Châu Hoàng Gia (Đá)", "price": 55000, "category": "Trà" },
+            { "name": "Trà Ô Long Lài Sữa (Nóng)", "price": 55000, "category": "Trà" },
+            { "name": "Trà lá nếp", "price": 55000, "category": "Trà" },
+            { "name": "Trà xoài sữa lắc", "price": 55000, "category": "Trà" },
+            { "name": "Trà Ô Long Yến Mạch (Đá)", "price": 55000, "category": "Trà" },
+
+            { "name": "Chocolate đá xay", "price": 50000, "category": "Đá Xay" },
+            { "name": "Matcha đá xay", "price": 50000, "category": "Đá Xay" },
+            { "name": "Bạc hà sôcôla", "price": 50000, "category": "Đá Xay" },
+            { "name": "Cookies choco", "price": 55000, "category": "Đá Xay" },
+
+            { "name": "Hướng dương", "price": 20000, "category": "Đồ Ăn Vặt" },
+
+            { "name": "Bơ Già Dừa Non (Đá)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dừa Non Kem Xoài AHA", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Bơ Già Kem Dừa AHA", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Matcha Xoài", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chocolate Yến Mạch (Nóng)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Matcha Hạnh Nhân (Nóng)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chocolate Yến Mạch (Đá)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Matcha Hạnh Nhân (Đá)", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố xoài và kem", "price": 49000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua kem dâu", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Rau má đậu xanh", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Đậu xanh kem dừa", "price": 49000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chanh tươi", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Chanh leo", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Ổi ép", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dưa hấu ép", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dứa ép", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dừa xiêm", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Cam vắt", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Táo ép", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Nước bưởi ép", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Dâu tây kem xoài", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Phúc bồn tử kem vani", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Hoa quả dầm kem dừa", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố xoài", "price": 50000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố dừa xiêm", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sinh tố chanh tuyết", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Hoa quả dầm sữa chua", "price": 55000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua đá", "price": 30000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua cà phê", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua cacao", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Sữa chua chanh leo", "price": 35000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Cacao (nóng/đá)", "price": 45000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Bia Sài Gòn", "price": 30000, "category": "Sinh Tố & Nước Ép" },
+            { "name": "Nước ngọt", "price": 25000, "category": "Sinh Tố & Nước Ép" }
         ];
         
-        items = [...items, ...menuItems];
+        // Tránh gộp trùng lặp nếu món đã có trong danh sách mặc định
+        const dbItems = menuItems.filter(dbIt => {
+            if (!dbIt || !dbIt.name) return false;
+            const nameLower = dbIt.name.trim().toLowerCase();
+            return !items.some(defaultIt => defaultIt.name.trim().toLowerCase() === nameLower);
+        });
+
+        items = [...items, ...dbItems];
         
         const queryStr = document.getElementById('pos-search-input')?.value.toLowerCase() || '';
         
@@ -1215,12 +1425,16 @@ document.addEventListener('DOMContentLoaded', () => {
             filtered = filtered.filter(it => it.name.toLowerCase().includes(queryStr));
         }
 
-        container.innerHTML = filtered.map(it => `
-            <div class="product-card" onclick="addToCart('${it.name}', ${it.price})">
-                <div class="product-name">${it.name}</div>
-                <div class="product-price">${it.price.toLocaleString()} đ</div>
-            </div>
-        `).join('');
+        container.innerHTML = filtered.map(it => {
+            const priceVal = (it.price !== undefined && it.price !== null) ? Number(it.price) : 0;
+            const priceStr = isNaN(priceVal) ? '0' : priceVal.toLocaleString();
+            return `
+                <div class="product-card" onclick="addToCart('${(it.name || '').replace(/'/g, "\\'")}', ${priceVal})">
+                    <div class="product-name">${it.name || 'Chưa đặt tên'}</div>
+                    <div class="product-price">${priceStr} đ</div>
+                </div>
+            `;
+        }).join('');
     };
 
     window.filterProducts = function() {
