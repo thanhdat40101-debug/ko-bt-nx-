@@ -628,6 +628,7 @@ body {
     padding: 8px 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 .table-item {
@@ -642,6 +643,7 @@ body {
     border: 1px solid transparent;
     transition: all 0.2s;
     cursor: pointer;
+    touch-action: pan-y;
 }
 
 .table-item:active {

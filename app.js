@@ -454,17 +454,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 const touch = e.touches[0];
                 startDragAttempt(touch.clientX, touch.clientY, touch.target);
             }
-        });
+        }, { passive: true }); // Tối ưu hóa passive: true cho touchstart giúp cuộn trang siêu mượt
+
+        // Lắng nghe touchmove trực tiếp trên lưới bàn chỉ để phát hiện và hủy trạng thái chờ kéo khi vuốt cuộn tự nhiên
+        container.addEventListener('touchmove', function(e) {
+            if (draggedTableId && !isDragging) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - startX;
+                    const dy = touch.clientY - startY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist > DRAG_THRESHOLD) {
+                        // Người dùng đang vuốt cuộn màn hình, hủy trạng thái nhấn giữ ngay lập tức!
+                        if (dragStartTimer) {
+                            clearTimeout(dragStartTimer);
+                            dragStartTimer = null;
+                        }
+                        draggedTableId = null;
+                        activeTargetEl = null;
+                    }
+                }
+            }
+        }, { passive: true }); // passive: true hoàn toàn ngăn chặn cảnh báo và chặn cuộn của trình duyệt
 
         document.addEventListener('touchmove', function(e) {
-            if (isDragging) {
-                e.preventDefault(); // CHỈ ngăn cuộn trang khi thực sự đang thực hiện hành động kéo bàn
+            if (!isDragging) {
+                return; // THOÁT NGAY LẬP TỨC để trình duyệt tự động xử lý cuộn với hiệu năng tối đa
             }
+            
+            e.preventDefault(); // CHỈ ngăn cuộn trang khi thực sự đang thực hiện hành động kéo bàn
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 moveDrag(touch.clientX, touch.clientY, true);
             }
-        }, { passive: false });
+        }, { passive: false }); // Chỉ dùng passive: false khi đang thực hiện kéo bàn để chặn cuộn màn hình
 
         document.addEventListener('touchend', function(e) {
             cancelDragAttempt();
