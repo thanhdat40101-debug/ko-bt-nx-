@@ -61,16 +61,75 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentRole = 'staff';
     let enteredPin = '';
 
+    // --- KITCHEN NOTIFICATION STATE ---
+    let knownActiveItems = new Set();
+    let isFirstLoad = true;
+
     // --- CHARTS STATE ---
     let revenueChart = null;
     let paymentChart = null;
+
+    // --- UTILITIES ---
+    window.getTableName = function(id) {
+        id = parseInt(id);
+        if (isNaN(id)) return 'Bàn ' + id;
+        if (id <= 40) {
+            return `Bàn ${id}`;
+        } else {
+            return `B${id - 40}`;
+        }
+    };
+
+    // --- FULLSCREEN MANAGEMENT UTILITIES ---
+    window.enterFullscreen = function() {
+        const docEl = document.documentElement;
+        try {
+            if (docEl.requestFullscreen) {
+                docEl.requestFullscreen().catch(err => console.log("Rejected standard fullscreen:", err));
+            } else if (docEl.webkitRequestFullscreen) { /* Safari / iOS Safari */
+                docEl.webkitRequestFullscreen().catch(err => console.log("Rejected webkit fullscreen:", err));
+            } else if (docEl.msRequestFullscreen) { /* IE11 / Edge */
+                docEl.msRequestFullscreen().catch(err => console.log("Rejected ms fullscreen:", err));
+            }
+        } catch (err) {
+            console.log("Fullscreen request failed:", err);
+        }
+    };
+
+    window.exitFullscreen = function() {
+        try {
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(err => console.log("Exit fullscreen rejected:", err));
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen().catch(err => console.log("Exit webkit fullscreen rejected:", err));
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen().catch(err => console.log("Exit ms fullscreen rejected:", err));
+                }
+            }
+        } catch (err) {
+            console.log("Exit fullscreen failed:", err);
+        }
+    };
+
+    // --- HELPER FOR ROLE NORMALIZATION ---
+    function getUserRole() {
+        let role = sessionStorage.getItem('goat_user_role') || 'staff';
+        if (role === 'THU NGÂN' || role === 'Thu ngân' || role === 'NHÂN VIÊN' || role === 'Nhân viên') {
+            role = 'staff';
+        }
+        return role;
+    }
 
     // --- INITIALIZATION ---
     window.initApp = function() {
         console.log("⚡ Đang khởi tạo ứng dụng (Firebase Firestore Realtime Mode)...");
         
         // 1. Kiểm tra trạng thái đăng nhập từ sessionStorage
-        const savedRole = sessionStorage.getItem('goat_user_role');
+        let savedRole = sessionStorage.getItem('goat_user_role');
+        if (savedRole === 'THU NGÂN' || savedRole === 'Thu ngân' || savedRole === 'NHÂN VIÊN' || savedRole === 'Nhân viên') {
+            savedRole = 'staff';
+        }
         const loginOverlay = document.getElementById('login-overlay');
         
         if (!savedRole) {
@@ -99,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const placeholder = document.getElementById('qr-preview-placeholder');
             const billQRImg = document.getElementById('bill-qr-code-img');
             const missingMsg = document.getElementById('qr-missing-msg');
+            const deleteBtn = document.getElementById('btn-delete-qr');
             
             if (docSnap.exists() && docSnap.data().qrCode) {
                 const qrData = docSnap.data().qrCode;
@@ -106,11 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (placeholder) placeholder.style.display = 'none';
                 if (billQRImg) { billQRImg.src = qrData; billQRImg.style.display = 'block'; }
                 if (missingMsg) missingMsg.style.display = 'none';
+                if (deleteBtn) deleteBtn.style.display = 'flex';
             } else {
                 if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
                 if (placeholder) placeholder.style.display = 'block';
                 if (billQRImg) { billQRImg.src = ''; billQRImg.style.display = 'none'; }
                 if (missingMsg) missingMsg.style.display = 'block';
+                if (deleteBtn) deleteBtn.style.display = 'none';
             }
         });
 
@@ -121,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tableId = parseInt(doc.id.replace('table_', ''));
                 tableOrders[tableId] = doc.data();
             });
+            
+            // Kiểm tra có đơn mới để phát chuông báo bếp
+            checkNewOrders(tableOrders);
+            
             renderTables();
             
             // Render realtime màn hình Quầy Bar
@@ -160,7 +226,230 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDashboardUI();
             updateTopSelling();
         });
+
+        // 7. Khởi tạo tính năng kéo thả chuyển bàn
+        initDragAndDrop();
     };
+
+    // --- DRAG AND DROP ENGINE FOR TABLES ---
+    function initDragAndDrop() {
+        const container = document.getElementById('table-grid-container');
+        if (!container) return;
+
+        let draggedTableId = null;
+        let dragHelper = null;
+        let lastHoveredTableId = null;
+        let isDragging = false;
+        
+        let startX = 0;
+        let startY = 0;
+        let dragStartTimer = null;
+        let activeTargetEl = null;
+        const DRAG_THRESHOLD = 8; // Ngưỡng dịch chuyển (pixels) để kích hoạt kéo lập tức
+        const LONG_PRESS_DELAY = 250; // Thời gian nhấn giữ (ms) để bắt đầu kéo
+
+        // Ngăn trình duyệt cuộn trang khi đang kéo trên thiết bị di động
+        container.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        const startDragAttempt = function(clientX, clientY, targetEl) {
+            const tableItem = targetEl.closest('.table-item');
+            if (!tableItem || !tableItem.classList.contains('table-active')) return;
+
+            const tableId = parseInt(tableItem.id.replace('table-', ''));
+            if (isNaN(tableId)) return;
+
+            draggedTableId = tableId;
+            activeTargetEl = tableItem;
+            startX = clientX;
+            startY = clientY;
+            isDragging = false;
+
+            // Xóa bộ đếm cũ nếu có
+            if (dragStartTimer) clearTimeout(dragStartTimer);
+
+            // Đặt đếm ngược để xác nhận nhấn giữ (Long press)
+            dragStartTimer = setTimeout(() => {
+                initiateDrag(clientX, clientY);
+            }, LONG_PRESS_DELAY);
+        };
+
+        const initiateDrag = function(clientX, clientY) {
+            if (isDragging || !activeTargetEl) return;
+            isDragging = true;
+
+            // Tạo một helper drag để hiển thị hiệu ứng kéo theo tay/chuột
+            dragHelper = activeTargetEl.cloneNode(true);
+            dragHelper.style.position = 'fixed';
+            dragHelper.style.width = activeTargetEl.offsetWidth + 'px';
+            dragHelper.style.height = activeTargetEl.offsetHeight + 'px';
+            dragHelper.style.left = (clientX - activeTargetEl.offsetWidth / 2) + 'px';
+            dragHelper.style.top = (clientY - activeTargetEl.offsetHeight / 2) + 'px';
+            dragHelper.style.opacity = '0.85';
+            dragHelper.style.zIndex = '9999';
+            dragHelper.style.pointerEvents = 'none'; // CỰC KỲ QUAN TRỌNG: để document.elementFromPoint đọc được phần tử nằm dưới nó
+            dragHelper.style.boxShadow = '0 12px 24px rgba(0,0,0,0.2)';
+            dragHelper.style.transform = 'scale(1.05)';
+            dragHelper.style.transition = 'none';
+            document.body.appendChild(dragHelper);
+
+            // Gán class kéo cho phần tử gốc
+            activeTargetEl.classList.add('table-dragging');
+        };
+
+        const moveDrag = function(clientX, clientY) {
+            if (!draggedTableId) return;
+
+            if (isDragging) {
+                if (dragHelper) {
+                    // Di chuyển helper theo con trỏ
+                    dragHelper.style.left = (clientX - dragHelper.offsetWidth / 2) + 'px';
+                    dragHelper.style.top = (clientY - dragHelper.offsetHeight / 2) + 'px';
+                }
+
+                // Tìm phần tử nằm dưới ngón tay / con trỏ chuột
+                const elementUnder = document.elementFromPoint(clientX, clientY);
+                if (!elementUnder) return;
+
+                const targetTableItem = elementUnder.closest('.table-item');
+                
+                // Xóa highlight bàn đã rà trước đó
+                if (lastHoveredTableId) {
+                    const prevEl = document.getElementById(`table-${lastHoveredTableId}`);
+                    if (prevEl) {
+                        prevEl.classList.remove('table-hovered-target');
+                        prevEl.style.borderColor = '';
+                        prevEl.style.boxShadow = '';
+                    }
+                    lastHoveredTableId = null;
+                }
+
+                if (targetTableItem && targetTableItem.id !== `table-${draggedTableId}`) {
+                    const targetId = parseInt(targetTableItem.id.replace('table-', ''));
+                    if (!isNaN(targetId)) {
+                        targetTableItem.classList.add('table-hovered-target');
+                        if (targetTableItem.classList.contains('table-empty')) {
+                            targetTableItem.style.borderColor = '#10b981'; // Xanh lá khi chuyển sang bàn trống
+                            targetTableItem.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
+                        } else {
+                            targetTableItem.style.borderColor = '#f59e0b'; // Màu vàng cam khi gộp bàn
+                            targetTableItem.style.boxShadow = '0 0 10px rgba(245, 158, 11, 0.4)';
+                        }
+                        lastHoveredTableId = targetId;
+                    }
+                }
+            } else {
+                // Tính khoảng cách dịch chuyển để xem có kích hoạt kéo sớm không
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > DRAG_THRESHOLD) {
+                    if (dragStartTimer) {
+                        clearTimeout(dragStartTimer);
+                        dragStartTimer = null;
+                    }
+                    initiateDrag(clientX, clientY);
+                }
+            }
+        };
+
+        const endDrag = function() {
+            if (!isDragging) return;
+
+            isDragging = false;
+            
+            // Loại bỏ class kéo của phần tử gốc
+            const originEl = document.getElementById(`table-${draggedTableId}`);
+            if (originEl) originEl.classList.remove('table-dragging');
+
+            // Làm sạch highlight của bàn mục tiêu
+            if (lastHoveredTableId) {
+                const targetEl = document.getElementById(`table-${lastHoveredTableId}`);
+                if (targetEl) {
+                    targetEl.classList.remove('table-hovered-target');
+                    targetEl.style.borderColor = '';
+                    targetEl.style.boxShadow = '';
+                }
+            }
+
+            // Xóa helper
+            if (dragHelper) {
+                dragHelper.remove();
+                dragHelper = null;
+            }
+
+            const from = draggedTableId;
+            const to = lastHoveredTableId;
+
+            draggedTableId = null;
+            lastHoveredTableId = null;
+            activeTargetEl = null;
+
+            if (from && to && from !== to) {
+                const isToOccupied = tableOrders[to] !== undefined;
+                let confirmMsg = `Bạn có chắc chắn muốn chuyển khách từ ${window.getTableName(from)} sang ${window.getTableName(to)} không?`;
+                if (isToOccupied) {
+                    confirmMsg = `${window.getTableName(to)} đang có khách. Bạn có chắc chắn muốn gộp đơn của ${window.getTableName(from)} vào ${window.getTableName(to)} không?`;
+                }
+
+                if (confirm(confirmMsg)) {
+                    window.confirmMoveTable(from, to);
+                }
+            }
+        };
+
+        const cancelDragAttempt = function() {
+            if (dragStartTimer) {
+                clearTimeout(dragStartTimer);
+                dragStartTimer = null;
+            }
+
+            if (isDragging) {
+                endDrag();
+            } else {
+                // Nhả tay nhanh (Click/Tap), làm sạch biến để cho phép trình duyệt kích hoạt onclick tự nhiên
+                draggedTableId = null;
+                activeTargetEl = null;
+            }
+        };
+
+        // Gán các sự kiện Chuột (Mouse)
+        container.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return; // Chỉ nhận chuột trái
+            startDragAttempt(e.clientX, e.clientY, e.target);
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            moveDrag(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            cancelDragAttempt();
+        });
+
+        // Gán các sự kiện Chạm (Touch) dành cho Điện thoại / Máy tính bảng
+        container.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                startDragAttempt(touch.clientX, touch.clientY, touch.target);
+            }
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                moveDrag(touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(e) {
+            cancelDragAttempt();
+        });
+    }
 
     // --- RECALCULATE STATS FROM HISTORY ---
     function recalculateStats() {
@@ -213,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (role === 'staff') {
             if (pinField) pinField.style.display = 'none';
-            if (submitBtn) submitBtn.innerText = 'Đăng nhập Nhân viên ➔';
+            if (submitBtn) submitBtn.innerText = 'Đăng nhập Thu ngân ➔';
             enteredPin = '';
             updatePinDots();
         } else if (role === 'bar') {
@@ -325,11 +614,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function applyRoleSettings() {
-        const role = sessionStorage.getItem('goat_user_role') || 'staff';
+        const role = getUserRole();
         const badge = document.getElementById('user-badge');
         if (badge) {
-            badge.innerText = role === 'admin' ? 'Admin' : (role === 'bar' ? 'Quầy Bar' : 'Nhân viên');
+            badge.innerText = role === 'admin' ? 'Admin' : (role === 'bar' ? 'Quầy Bar' : 'Thu ngân');
             badge.className = 'user-badge' + (role === 'admin' ? ' admin' : (role === 'bar' ? ' bar' : ''));
+        }
+        
+        // Phân quyền chi tiết trong màn hình Dashboard (Nhân viên được xem đầy đủ 100% doanh thu)
+        const cardRevenue = document.getElementById('card-revenue');
+        const cardAvg = document.getElementById('card-avg');
+        const containerRevenueChart = document.getElementById('container-revenue-chart');
+        
+        if (cardRevenue) cardRevenue.style.display = 'block';
+        if (cardAvg) cardAvg.style.display = 'block';
+        if (containerRevenueChart) containerRevenueChart.style.display = 'block';
+        
+        // Cập nhật lại số liệu hiển thị (tiền thật) dựa vào vai trò hiện tại
+        if (typeof window.updateDashboardUI === 'function') {
+            window.updateDashboardUI();
         }
         
         const dashboardNavBtn = document.getElementById('nav-dashboard');
@@ -341,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const items = menuSection.querySelectorAll('.menu-item');
             items.forEach(item => {
                 const label = item.querySelector('.menu-label')?.innerText || '';
-                if (label.includes('Cấu hình in') || label.includes('Cấu hình Thanh toán')) {
+                if (label.includes('Cấu hình in') || label.includes('Cấu hình Thanh toán') || label.includes('Quản lý ca')) {
                      item.style.display = role === 'admin' ? 'flex' : 'none';
                 }
             });
@@ -358,25 +661,30 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             document.body.classList.remove('role-bar-active');
             
+            // Nút "Tổng quan" ở thanh đáy luôn hiển thị cho cả Admin và Nhân viên
+            if (dashboardNavBtn) dashboardNavBtn.style.display = 'flex';
+            
+            window.switchTab('dashboard-section');
+            
+            const reportBtn = document.getElementById('btn-view-report');
+            const importExcelBtn = document.getElementById('btn-import-excel');
             if (role === 'admin') {
-                if (dashboardNavBtn) dashboardNavBtn.style.display = 'flex';
                 if (clearHistoryBtn) clearHistoryBtn.style.display = 'block';
+                if (reportBtn) reportBtn.style.display = 'block';
                 
                 const quickAddBtn = document.querySelector('.btn-toggle-add');
                 if (quickAddBtn) quickAddBtn.style.display = 'flex';
-                
-                window.switchTab('dashboard-section');
+                if (importExcelBtn) importExcelBtn.style.display = 'flex';
             } else {
-                if (dashboardNavBtn) dashboardNavBtn.style.display = 'none';
                 if (clearHistoryBtn) clearHistoryBtn.style.display = 'none';
+                if (reportBtn) reportBtn.style.display = 'none';
                 
                 const quickAddBtn = document.querySelector('.btn-toggle-add');
                 if (quickAddBtn) quickAddBtn.style.display = 'none';
+                if (importExcelBtn) importExcelBtn.style.display = 'none';
                 
                 const quickAddForm = document.getElementById('quick-add-form');
                 if (quickAddForm) quickAddForm.style.display = 'none';
-
-                window.switchTab('pos-section');
             }
         }
     }
@@ -475,10 +783,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            const checkInVal = tableOrders[num]?.checkInTime ? tableOrders[num].checkInTime : new Date();
             await setDoc(doc(db, 'tables', `table_${num}`), {
                 items: finalItems,
                 total: finalTotal,
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                checkInTime: checkInVal
             });
             console.log(`Đồng bộ bàn ${num} lên Firestore thành công!`);
         } catch (err) {
@@ -498,8 +808,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- PAYMENT LOGIC ---
-    window.payWithCash = () => { if (confirm(`Xác nhận thanh toán TIỀN MẶT cho Bàn ${selectedTableForBill}?`)) finishPayment('Tiền mặt'); };
-    window.confirmPayment = () => { if (confirm(`Đã nhận đủ tiền CHUYỂN KHOẢN cho Bàn ${selectedTableForBill}?`)) finishPayment('Chuyển khoản'); };
+    window.payWithCash = () => { if (confirm(`Xác nhận thanh toán TIỀN MẶT cho ${getTableName(selectedTableForBill)}?`)) finishPayment('Tiền mặt'); };
+    window.confirmPayment = () => { if (confirm(`Đã nhận đủ tiền CHUYỂN KHOẢN cho ${getTableName(selectedTableForBill)}?`)) finishPayment('Chuyển khoản'); };
 
     async function finishPayment(method) {
         const id = selectedTableForBill;
@@ -550,7 +860,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="order-card" onclick="showOrderDetail('${order.id}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:16px; background:white; border-radius:12px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,0.02); border:1px solid #f1f5f9;">
                     <div class="order-info-left">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="order-id" style="font-weight:800; color:#1e293b; font-size:14px;">${order.id} (Bàn ${order.tableId})</span>
+                            <span class="order-id" style="font-weight:800; color:#1e293b; font-size:14px;">${order.id} (${getTableName(order.tableId)})</span>
                             <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:${methodBg}; color:${methodColor}; font-weight:700;">${order.paymentMethod}</span>
                         </div>
                         <span class="order-time" style="font-size:12px; color:#94a3b8;">${order.time}</span>
@@ -584,7 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.confirmClearHistory = async function() {
-        const role = sessionStorage.getItem('goat_user_role') || 'staff';
+        const role = getUserRole();
         if (role !== 'admin') {
             alert("❌ Bạn không có quyền thực hiện chức năng này!");
             return;
@@ -612,10 +922,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI HELPERS ---
     window.switchTab = function(tabId) {
-        const role = sessionStorage.getItem('goat_user_role') || 'staff';
+        const role = getUserRole();
         
-        // Khóa màn hình với từng vai trò cụ thể
-        if (tabId === 'dashboard-section' && (role === 'staff' || role === 'bar')) {
+        // Khóa màn hình với từng vai trò cụ thể (Nhân viên được phép xem Dashboard nhưng không xem được số liệu tiền nong)
+        if (tabId === 'dashboard-section' && role === 'bar') {
             return; 
         }
         if (role === 'bar' && tabId !== 'bar-section') {
@@ -630,6 +940,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = document.getElementById(tabId);
         if (target) target.style.display = 'block';
 
+        // Tự động kích hoạt/hủy kích hoạt giao diện tối (Dark Mode) cho màn hình Quầy Bar
+        if (tabId === 'bar-section') {
+            document.body.classList.add('dark-theme');
+            
+            // Kích hoạt Fullscreen tự động
+            window.enterFullscreen();
+
+            // Đăng ký tương tác dự phòng nếu trình duyệt chặn tự động mở
+            if (!window.barFullscreenListenerRegistered) {
+                window.barFullscreenListenerRegistered = true;
+                const barSec = document.getElementById('bar-section');
+                if (barSec) {
+                    barSec.addEventListener('click', () => {
+                        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                            window.enterFullscreen();
+                        }
+                    }, { once: true }); // Kích hoạt ngay khi nhấp chuột/chạm lần đầu
+                }
+            }
+        } else {
+            document.body.classList.remove('dark-theme');
+            window.exitFullscreen();
+        }
+
         if (tabId === 'order-history-section') renderHistory();
 
         const navItems = document.querySelectorAll('.bottom-nav-item');
@@ -640,18 +974,74 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeBtn) activeBtn.classList.add('active');
     };
 
+    window.currentFloor = 1;
+    window.switchFloor = function(floor) {
+        window.currentFloor = floor;
+        const btn1 = document.getElementById('btn-floor-1');
+        const btn2 = document.getElementById('btn-floor-2');
+        if (btn1 && btn2) {
+            if (floor === 1) {
+                btn1.style.background = 'white';
+                btn1.style.color = 'var(--primary)';
+                btn1.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+                btn1.classList.add('active');
+                
+                btn2.style.background = 'transparent';
+                btn2.style.color = '#64748b';
+                btn2.style.boxShadow = 'none';
+                btn2.classList.remove('active');
+            } else {
+                btn2.style.background = 'white';
+                btn2.style.color = 'var(--primary)';
+                btn2.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+                btn2.classList.add('active');
+                
+                btn1.style.background = 'transparent';
+                btn1.style.color = '#64748b';
+                btn1.style.boxShadow = 'none';
+                btn1.classList.remove('active');
+            }
+        }
+        renderTables();
+    };
+
     window.renderTables = function() {
         const container = document.getElementById('table-grid-container');
         if (!container) return;
         let html = '';
-        for (let i = 1; i <= 40; i++) {
+        
+        const start = window.currentFloor === 1 ? 1 : 41;
+        const end = window.currentFloor === 1 ? 40 : 80;
+        
+        for (let i = start; i <= end; i++) {
             const hasOrder = tableOrders[i];
-            html += `<div id="table-${i}" class="table-item ${hasOrder ? 'table-active' : 'table-empty'}" onclick="${hasOrder ? `viewTableBill(${i})` : `selectEmptyTable(${i})`}">Bàn ${i}</div>`;
+            if (hasOrder) {
+                let checkInStr = '';
+                const timeSource = hasOrder.checkInTime || hasOrder.updatedAt;
+                if (timeSource) {
+                    const dateObj = timeSource.seconds ? new Date(timeSource.seconds * 1000) : new Date(timeSource);
+                    checkInStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                }
+                const checkInHtml = checkInStr ? `<div class="table-checkin-time">Check-in: ${checkInStr}</div>` : '';
+                
+                html += `
+                    <div id="table-${i}" class="table-item table-active" onclick="viewTableBill(${i})">
+                        <span style="font-weight: 700;">${getTableName(i)}</span>
+                        ${checkInHtml}
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div id="table-${i}" class="table-item table-empty" onclick="selectEmptyTable(${i})">
+                        <span style="font-weight: 700;">${getTableName(i)}</span>
+                    </div>
+                `;
+            }
         }
         container.innerHTML = html;
         const occupied = Object.keys(tableOrders).length;
         const statsEl = document.getElementById('table-stats');
-        if (statsEl) statsEl.innerText = `Tổng: 40 bàn | Đang phục vụ: ${occupied}`;
+        if (statsEl) statsEl.innerText = `Tổng: 80 bàn | Đang phục vụ: ${occupied}`;
     };
 
     window.selectEmptyTable = function(i) {
@@ -662,17 +1052,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (noticeBar) {
             noticeBar.style.display = 'block';
             const nameSpan = document.getElementById('pos-target-table-name');
-            if (nameSpan) nameSpan.innerText = `Bàn ${i}`;
+            if (nameSpan) nameSpan.innerText = getTableName(i);
         }
     };
 
     window.updateDashboardUI = function() {
-        if (document.getElementById('stat-revenue')) document.getElementById('stat-revenue').innerText = `${stats.totalRevenue.toLocaleString()} đ`;
-        if (document.getElementById('stat-orders')) document.getElementById('stat-orders').innerText = stats.totalOrders;
+        if (document.getElementById('stat-revenue')) {
+            document.getElementById('stat-revenue').innerText = `${stats.totalRevenue.toLocaleString()} đ`;
+        }
+        if (document.getElementById('stat-orders')) {
+            document.getElementById('stat-orders').innerText = stats.totalOrders;
+        }
         
         const avg = stats.totalOrders > 0 ? Math.round(stats.totalRevenue / stats.totalOrders) : 0;
-        if (document.getElementById('stat-avg')) document.getElementById('stat-avg').innerText = `${avg.toLocaleString()} đ`;
-        if (document.getElementById('stat-guests')) document.getElementById('stat-guests').innerText = stats.guestCount;
+        if (document.getElementById('stat-avg')) {
+            document.getElementById('stat-avg').innerText = `${avg.toLocaleString()} đ`;
+        }
+        if (document.getElementById('stat-guests')) {
+            document.getElementById('stat-guests').innerText = stats.guestCount;
+        }
         
         updateCharts();
     };
@@ -705,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom',
+                            position: 'right',
                             labels: {
                                 font: { family: 'Inter', size: 11, weight: '600' },
                                 boxWidth: 12
@@ -833,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.viewTableBill = function(id) {
         const order = tableOrders[id]; if (!order) return;
         selectedTableForBill = id;
-        document.getElementById('bill-sheet-title').innerText = `Chi tiết Bàn ${id}`;
+        document.getElementById('bill-sheet-title').innerText = `Chi tiết ${getTableName(id)}`;
         document.getElementById('bill-items-list').innerHTML = order.items.map(it => {
             const status = it.status || 'pending';
             let badgeLabel = '⏳ Đang chờ';
@@ -869,11 +1267,23 @@ document.addEventListener('DOMContentLoaded', () => {
         window.switchTab('shift-management-section');
         const m = document.getElementById('update-modal');
         if (m) { m.style.display = 'flex'; setTimeout(() => m.querySelector('.update-popup').style.transform = 'scale(1)', 50); }
+        
+        // Ẩn thanh Bottom Navigation Menu khi mở modal Quản lý ca
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = 'none';
+        }
     };
 
     window.closeUpdateModal = () => {
         const m = document.getElementById('update-modal');
         if (m) { m.querySelector('.update-popup').style.transform = 'scale(0.9)'; setTimeout(() => m.style.display = 'none', 200); }
+        
+        // Khôi phục thanh Bottom Navigation Menu khi đóng modal Quản lý ca
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav) {
+            bottomNav.style.display = 'flex';
+        }
     };
 
     window.closeAllModals = function() {
@@ -886,13 +1296,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function syncPrintSettingsToUI() {
         const fields = ['p-show-logo', 'p-show-qr', 'p-show-wifi', 'p-show-tax', 'p-show-note'];
         fields.forEach(id => {
-            const prop = id.replace('p-', '').replace(/-(.)/g, (_, c) => c.toUpperCase());
+            let prop = id.replace('p-', '').replace(/-(.)/g, (_, c) => c.toUpperCase());
+            if (prop === 'showQr') prop = 'showQR';
+            if (prop === 'showWifi') prop = 'showWiFi';
+            
             const el = document.getElementById(id);
             if (el) el.checked = !!printSettings[prop];
         });
         if (document.getElementById('p-header')) document.getElementById('p-header').value = printSettings.headerText || '';
         if (document.getElementById('p-footer')) document.getElementById('p-footer').value = printSettings.footerText || '';
         window.selectPaper(printSettings.paperSize || 58);
+
+        // Cập nhật ngay lập tức các lớp ẩn/hiện trên giao diện xem trước hóa đơn
+        if (document.getElementById('v-header')) document.getElementById('v-header').innerText = printSettings.headerText || '';
+        if (document.getElementById('v-footer')) document.getElementById('v-footer').innerText = printSettings.footerText || '';
+        if (document.getElementById('v-logo')) document.getElementById('v-logo').classList.toggle('hidden', !printSettings.showLogo);
+        if (document.getElementById('v-qr')) document.getElementById('v-qr').classList.toggle('hidden', !printSettings.showQR);
+        if (document.getElementById('v-wifi')) document.getElementById('v-wifi').classList.toggle('hidden', !printSettings.showWiFi);
+        if (document.getElementById('v-tax')) document.getElementById('v-tax').classList.toggle('hidden', !printSettings.showTax);
+        if (document.getElementById('v-note')) document.getElementById('v-note').classList.toggle('hidden', !printSettings.showNote);
     }
 
     window.selectPaper = async function(size) {
@@ -950,6 +1372,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.handleDeleteQR = async () => {
+        if (confirm("⚠️ Bạn có chắc chắn muốn xóa ảnh mã QR Ngân hàng hiện tại?")) {
+            try {
+                // Xóa trường qrCode khỏi document settings/payment
+                await setDoc(doc(db, 'settings', 'payment'), { qrCode: '' });
+                
+                // Reset input file để có thể chọn lại cùng ảnh
+                const uploadInput = document.getElementById('qr-upload');
+                if (uploadInput) uploadInput.value = '';
+                
+                alert("✅ Đã xóa ảnh mã QR thành công!");
+            } catch (err) {
+                console.error("Lỗi khi xóa ảnh QR:", err);
+                alert("❌ Không thể xóa ảnh QR online. Vui lòng kiểm tra lại kết nối!");
+            }
+        }
+    };
+
     function updateHeaderDate() {
         const el = document.getElementById('header-date');
         if (el) el.innerText = new Date().toLocaleDateString('vi-VN', { day:'numeric', month:'long', year:'numeric' });
@@ -992,7 +1432,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.handleQuickAdd = async () => {
-        const role = sessionStorage.getItem('goat_user_role') || 'staff';
+        const role = getUserRole();
         if (role !== 'admin') {
             alert("❌ Chỉ Admin mới được chỉnh sửa thực đơn!");
             return;
@@ -1029,7 +1469,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const grid = document.getElementById('select-table-grid');
-        grid.innerHTML = Array.from({length:40}, (_,i)=>i+1).map(i => `<button class="select-table-btn ${tableOrders[i]?'occupied':''}" onclick="confirmSelection(${i})">${i}</button>`).join('');
+        grid.innerHTML = Array.from({length:80}, (_,i)=>i+1).map(i => `<button class="select-table-btn ${tableOrders[i]?'occupied':''}" onclick="confirmSelection(${i})">${getTableName(i)}</button>`).join('');
         document.getElementById('modal-overlay').style.display = 'block';
         const s = document.getElementById('tableSelectorSheet'); s.style.display = 'block'; setTimeout(() => s.classList.add('active'), 10);
     };
@@ -1059,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (noticeBar) {
             noticeBar.style.display = 'block';
             const nameSpan = document.getElementById('pos-target-table-name');
-            if (nameSpan) nameSpan.innerText = `Bàn ${targetTableId}`;
+            if (nameSpan) nameSpan.innerText = getTableName(targetTableId);
         }
         
         window.closeAllModals();
@@ -1080,11 +1520,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('transfer-table-grid');
         if (!grid) return;
         
-        grid.innerHTML = Array.from({length: 40}, (_, i) => i + 1)
+        grid.innerHTML = Array.from({length: 80}, (_, i) => i + 1)
             .map(i => {
                 if (i === selectedTableForBill) return ''; // Không tự chuyển sang chính mình
                 const occupied = tableOrders[i] !== undefined;
-                return `<button class="select-table-btn ${occupied ? 'occupied' : ''}" onclick="confirmMoveTable(${selectedTableForBill}, ${i})">${i}</button>`;
+                return `<button class="select-table-btn ${occupied ? 'occupied' : ''}" onclick="confirmMoveTable(${selectedTableForBill}, ${i})">${getTableName(i)}</button>`;
             }).join('');
             
         window.closeAllModals();
@@ -1100,7 +1540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (tableOrders[toTable]) {
                 // Gộp bàn
-                if (confirm(`Bàn ${toTable} đang có khách. Bạn có gộp Bàn ${fromTable} vào Bàn ${toTable}?`)) {
+                if (confirm(`${getTableName(toTable)} đang có khách. Bạn có gộp ${getTableName(fromTable)} vào ${getTableName(toTable)}?`)) {
                     const fromOrder = tableOrders[fromTable];
                     const toOrder = tableOrders[toTable];
                     
@@ -1111,27 +1551,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         else mergedItems.push(newItem);
                     });
                     
+                    const toCheckIn = toOrder.checkInTime || fromOrder.checkInTime || new Date();
                     await setDoc(doc(db, 'tables', `table_${toTable}`), {
                         items: mergedItems,
                         total: toOrder.total + fromOrder.total,
-                        updatedAt: new Date()
+                        updatedAt: new Date(),
+                        checkInTime: toCheckIn
                     });
                     
                     await deleteDoc(doc(db, 'tables', `table_${fromTable}`));
-                    alert(`Đã gộp Bàn ${fromTable} vào Bàn ${toTable} trực tuyến!`);
+                    alert(`Đã gộp ${getTableName(fromTable)} vào ${getTableName(toTable)} trực tuyến!`);
                 } else {
                     return;
                 }
             } else {
                 // Chuyển bàn
+                const fromCheckIn = tableOrders[fromTable].checkInTime || new Date();
                 await setDoc(doc(db, 'tables', `table_${toTable}`), {
                     items: tableOrders[fromTable].items,
                     total: tableOrders[fromTable].total,
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
+                    checkInTime: fromCheckIn
                 });
                 
                 await deleteDoc(doc(db, 'tables', `table_${fromTable}`));
-                alert(`Đã chuyển Bàn ${fromTable} sang Bàn ${toTable} trực tuyến!`);
+                alert(`Đã chuyển ${getTableName(fromTable)} sang ${getTableName(toTable)} trực tuyến!`);
             }
         } catch (err) {
             console.error("Lỗi khi chuyển bàn:", err);
@@ -1144,7 +1588,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- QUICK ADD MANUAL ITEM FOR ADMIN ---
     window.addNewItem = async function() {
-        const role = sessionStorage.getItem('goat_user_role') || 'staff';
+        const role = getUserRole();
         if (role !== 'admin') {
             alert("❌ Chỉ Admin mới được chỉnh sửa thực đơn!");
             return;
@@ -1215,87 +1659,255 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('bar-grid');
         if (!grid) return;
 
+        // ÉP kích hoạt xem thử Easter Egg nếu cờ forceShowLoveArchery được bật
+        if (window.forceShowLoveArchery) {
+            if (typeof window.isLoveArcheryReversed === 'undefined') {
+                window.isLoveArcheryReversed = false;
+            }
+            
+            const reversedClass = window.isLoveArcheryReversed ? 'is-reversed' : '';
+            const boyShootingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
+            const boyDancingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
+            const girlDancingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
+            const girlShootingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
+            
+            grid.innerHTML = `
+                <div class="bar-empty-view" style="position: relative; padding: 80px 20px;">
+                    <button onclick="window.closeLoveArcherySecret()" class="bar-action-btn done" style="position: absolute; top: 16px; right: 16px; font-size: 11px; padding: 4px 10px; border-radius: 8px;">
+                        <i class="fa-solid fa-xmark"></i> Đóng chế độ xem thử
+                    </button>
+                    <p class="bar-empty-title">Chế độ xem thử Easter Egg</p>
+                    <p class="bar-empty-desc">Hiệu ứng chuyển động "Bắn cung tình yêu" đang được kích hoạt!</p>
+                </div>
+                <div id="love-animation-zone" class="love-animation-zone ${reversedClass}" style="display: none;">
+                    <div class="love-actors">
+                        <span class="actor-left boy-shooting" style="display: ${boyShootingDisplay};">👦🏹</span>
+                        <span class="actor-left boy-dancing" style="display: ${boyDancingDisplay};">🕺</span>
+                        
+                        <span class="arrow-heart-container">
+                            <span class="arrow-heart">💘</span>
+                        </span>
+                        
+                        <span class="actor-right girl-dancing" style="display: ${girlDancingDisplay};">💃</span>
+                        <span class="actor-right girl-shooting" style="display: ${girlShootingDisplay}; transform: scaleX(-1);">👩🏹</span>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
         let hasAnyItems = false;
         let html = '';
         
-        // Sắp xếp các bàn có order theo số bàn tăng dần
-        Object.keys(tableOrders).sort((a, b) => parseInt(a) - parseInt(b)).forEach(tableId => {
-            const order = tableOrders[tableId];
-            if (!order || !order.items) return;
-            
-            let filteredItems = [];
-            if (barActiveFilter === 'pending') {
-                filteredItems = order.items.filter(it => !it.status || it.status === 'pending' || it.status === 'preparing');
-            } else {
-                filteredItems = order.items.filter(it => it.status === 'completed');
-            }
-            
-            if (filteredItems.length > 0) {
-                hasAnyItems = true;
+        const startOfToday = new Date();
+        startOfToday.setHours(0,0,0,0);
+
+        if (barActiveFilter === 'pending') {
+            // Sắp xếp các bàn có order theo số bàn tăng dần
+            Object.keys(tableOrders).sort((a, b) => parseInt(a) - parseInt(b)).forEach(tableId => {
+                const order = tableOrders[tableId];
+                if (!order || !order.items) return;
                 
-                // Tính thời gian trôi qua từ lần cập nhật gần nhất
-                const updateDate = order.updatedAt?.seconds ? new Date(order.updatedAt.seconds * 1000) : new Date();
-                const elapsedMins = Math.round((new Date() - updateDate) / 60000);
-                const timeStr = elapsedMins > 0 ? `${elapsedMins} phút trước` : 'Vừa xong';
+                let filteredItems = order.items.filter(it => !it.status || it.status === 'pending' || it.status === 'preparing');
                 
-                html += `
-                    <div class="bar-order-card">
-                        <div class="bar-card-header">
-                            <span class="bar-table-title">BÀN ${tableId}</span>
-                            <span class="bar-time"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
-                        </div>
-                        <div class="bar-items-list">
-                            ${filteredItems.map(it => {
-                                const status = it.status || 'pending';
-                                let badgeLabel = 'Đang chờ';
-                                let badgeClass = 'pending';
-                                let btnHtml = '';
-                                
-                                if (status === 'pending') {
-                                    badgeLabel = '⏳ Đang chờ';
-                                    btnHtml = `
-                                        <button class="bar-action-btn start" onclick="updateItemBarStatus(${tableId}, '${it.name}', 'pending', 'preparing')">
-                                            <i class="fa-solid fa-mug-hot"></i> Làm món
-                                        </button>
-                                    `;
-                                } else if (status === 'preparing') {
-                                    badgeLabel = '🍹 Đang làm';
-                                    badgeClass = 'preparing';
-                                    btnHtml = `
-                                        <button class="bar-action-btn done" onclick="updateItemBarStatus(${tableId}, '${it.name}', 'preparing', 'completed')">
-                                            <i class="fa-solid fa-check"></i> Xong
-                                        </button>
-                                    `;
-                                } else if (status === 'completed') {
-                                    badgeLabel = '✅ Xong';
-                                    badgeClass = 'completed';
-                                }
-                                
-                                return `
-                                    <div class="bar-item-row">
-                                        <div class="bar-item-info">
+                if (filteredItems.length > 0) {
+                    hasAnyItems = true;
+                    
+                    // Tính thời gian trôi qua từ lần cập nhật gần nhất
+                    const updateDate = order.updatedAt?.seconds ? new Date(order.updatedAt.seconds * 1000) : new Date();
+                    const elapsedMins = Math.round((new Date() - updateDate) / 60000);
+                    const timeStr = elapsedMins > 0 ? `${elapsedMins} phút trước` : 'Vừa xong';
+                    
+                    html += `
+                        <div class="bar-order-card">
+                            <div class="bar-card-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span class="bar-table-title">${getTableName(tableId).toUpperCase()}</span>
+                                    <button class="bar-action-btn done" onclick="completeAllItemsForTable(${tableId})" style="padding: 3px 6px; font-size: 10px; border-radius: 6px; gap: 3px; display: inline-flex; align-items: center;">
+                                        <i class="fa-solid fa-check-double"></i> Xong hết
+                                    </button>
+                                </div>
+                                <span class="bar-time"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+                            </div>
+                            <div class="bar-items-list">
+                                ${filteredItems.map(it => {
+                                    const status = it.status || 'pending';
+                                    
+                                    const orderedAtMs = it.orderedAt?.seconds 
+                                        ? it.orderedAt.seconds * 1000 
+                                        : (it.orderedAt instanceof Date 
+                                            ? it.orderedAt.getTime() 
+                                            : (order.updatedAt?.seconds 
+                                                ? order.updatedAt.seconds * 1000 
+                                                : Date.now()));
+
+                                    return `
+                                        <div class="bar-item-row">
                                             <span class="bar-item-name">${it.name}</span>
-                                            <span class="bar-item-qty">Số lượng: ${it.qty}</span>
+                                            <div class="bar-item-details" style="gap: 12px;">
+                                                <span class="bar-item-qty" style="margin: 0;">SL: ${it.qty}</span>
+                                                <span class="bar-item-timer" data-ordered-at="${orderedAtMs}" data-status="${status}">⏳ Đang chờ...</span>
+                                                <div style="margin-left: auto; display: flex; align-items: center;">
+                                                    <button class="bar-action-btn done" onclick="updateItemBarStatus(${tableId}, '${it.name}', '${status}', 'completed')">
+                                                        <i class="fa-solid fa-check"></i> Xong
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="bar-item-right">
-                                            <span class="bar-status-badge ${badgeClass}">${badgeLabel}</span>
-                                            ${btnHtml}
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        } else {
+            // Lịch sử xong: Gom tất cả món đã hoàn thành hôm nay (từ cả active tables và orderHistory)
+            let completedItemsMap = {};
+
+            // 1. Món đã hoàn thành từ các bàn đang hoạt động
+            Object.keys(tableOrders).forEach(tableId => {
+                const order = tableOrders[tableId];
+                if (!order || !order.items) return;
+                
+                order.items.forEach(it => {
+                    if (it.status === 'completed') {
+                        const completedAt = it.completedAt?.seconds 
+                            ? new Date(it.completedAt.seconds * 1000) 
+                            : (it.completedAt instanceof Date 
+                                ? it.completedAt 
+                                : (order.updatedAt?.seconds ? new Date(order.updatedAt.seconds * 1000) : new Date()));
+                        
+                        if (completedAt >= startOfToday) {
+                            if (!completedItemsMap[tableId]) {
+                                completedItemsMap[tableId] = {
+                                    tableName: getTableName(tableId),
+                                    maxTimestamp: completedAt,
+                                    items: []
+                                };
+                            }
+                            
+                            completedItemsMap[tableId].items.push({
+                                name: it.name,
+                                qty: it.qty,
+                                completedAt: completedAt
+                            });
+
+                            if (completedAt > completedItemsMap[tableId].maxTimestamp) {
+                                completedItemsMap[tableId].maxTimestamp = completedAt;
+                            }
+                        }
+                    }
+                });
+            });
+
+            // 2. Món đã hoàn thành từ lịch sử thanh toán hôm nay
+            orderHistory.forEach(order => {
+                const orderDate = order.createdAt?.seconds 
+                    ? new Date(order.createdAt.seconds * 1000) 
+                    : (order.createdAt instanceof Date ? order.createdAt : new Date());
+                
+                if (orderDate >= startOfToday && order.items) {
+                    const tableId = order.tableId || 999;
+                    const tableName = order.tableName || getTableName(tableId);
+
+                    if (!completedItemsMap[tableId]) {
+                        completedItemsMap[tableId] = {
+                            tableName: tableName,
+                            maxTimestamp: orderDate,
+                            items: []
+                        };
+                    }
+
+                    order.items.forEach(it => {
+                        completedItemsMap[tableId].items.push({
+                            name: it.name,
+                            qty: it.qty,
+                            completedAt: orderDate
+                        });
+                    });
+
+                    if (orderDate > completedItemsMap[tableId].maxTimestamp) {
+                        completedItemsMap[tableId].maxTimestamp = orderDate;
+                    }
+                }
+            });
+
+            // Sắp xếp các bàn theo thời điểm món làm xong gần nhất nhảy lên đầu
+            const sortedTableIds = Object.keys(completedItemsMap).sort((a, b) => {
+                return completedItemsMap[b].maxTimestamp - completedItemsMap[a].maxTimestamp;
+            });
+
+            sortedTableIds.forEach(tableId => {
+                const tableData = completedItemsMap[tableId];
+                if (tableData.items.length > 0) {
+                    hasAnyItems = true;
+                    
+                    const timeStr = tableData.maxTimestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                    
+                    html += `
+                        <div class="bar-order-card" style="border-left: 4px solid #10b981;">
+                            <div class="bar-card-header">
+                                <span class="bar-table-title">${tableData.tableName.toUpperCase()}</span>
+                                <span class="bar-time" style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> Xong lúc ${timeStr}</span>
+                            </div>
+                            <div class="bar-items-list">
+                                ${tableData.items.map(it => `
+                                    <div class="bar-item-row">
+                                        <span class="bar-item-name" style="color: #64748b; text-decoration: line-through;">${it.name}</span>
+                                        <div class="bar-item-details">
+                                            <span class="bar-item-qty" style="margin: 0;">SL: ${it.qty}</span>
+                                            <span class="bar-status-badge completed" style="margin: 0;">✅ Xong</span>
                                         </div>
                                     </div>
-                                `;
-                            }).join('')}
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
-                `;
-            }
-        });
+                    `;
+                }
+            });
+        }
         
         if (!hasAnyItems) {
+            if (typeof window.isLoveArcheryReversed === 'undefined') {
+                window.isLoveArcheryReversed = false;
+            }
+            if (!window.loveArcheryInterval) {
+                window.loveArcheryInterval = setInterval(() => {
+                    // Chỉ kích hoạt nếu không có đơn hàng nào đang chờ làm
+                    const grid = document.getElementById('bar-grid');
+                    if (!grid || grid.querySelector('.bar-order-card')) {
+                        return; // Có đơn hàng, bỏ qua lượt
+                    }
+
+                    window.isLoveArcheryReversed = !window.isLoveArcheryReversed;
+                    window.triggerLoveArcheryShot();
+                }, 1800000); // 30 phút
+            }
+
+            const reversedClass = window.isLoveArcheryReversed ? 'is-reversed' : '';
+            const boyShootingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
+            const boyDancingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
+            const girlDancingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
+            const girlShootingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
+
             html = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8; background: white; border-radius: 16px; border: 1px dashed #e2e8f0; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.02);">
-                    <span style="font-size: 48px; display: block; margin-bottom: 16px;">☕</span>
-                    <p style="font-weight: 700; font-size: 16px; color: #64748b; margin-bottom: 4px;">Quầy pha chế trống</p>
-                    <p style="font-size: 13px; color: #94a3b8;">Không có món nào cần thực hiện lúc này.</p>
+                <div class="bar-empty-view">
+                    <p class="bar-empty-title">Quầy pha chế trống</p>
+                    <p class="bar-empty-desc">Không có món nào cần thực hiện lúc này.</p>
+                </div>
+                <div id="love-animation-zone" class="love-animation-zone ${reversedClass}" style="display: none;">
+                    <div class="love-actors">
+                        <span class="actor-left boy-shooting" style="display: ${boyShootingDisplay};">👦🏹</span>
+                        <span class="actor-left boy-dancing" style="display: ${boyDancingDisplay};">🕺</span>
+                        
+                        <span class="arrow-heart-container">
+                            <span class="arrow-heart">💘</span>
+                        </span>
+                        
+                        <span class="actor-right girl-dancing" style="display: ${girlDancingDisplay};">💃</span>
+                        <span class="actor-right girl-shooting" style="display: ${girlShootingDisplay}; transform: scaleX(-1);">👩🏹</span>
+                    </div>
                 </div>
             `;
         }
@@ -1311,7 +1923,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const updatedItems = order.items.map(it => {
             const itStatus = it.status || 'pending';
             if (it.name === itemName && itStatus === currentStatus) {
-                return { ...it, status: newStatus };
+                return { 
+                    ...it, 
+                    status: newStatus,
+                    completedAt: newStatus === 'completed' ? new Date() : (it.completedAt || null)
+                };
             }
             return it;
         });
@@ -1327,6 +1943,404 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Lỗi kết nối cơ sở dữ liệu online!");
         }
     };
+
+    window.completeAllItemsForTable = async function(tableId) {
+        const order = tableOrders[tableId];
+        if (!order || !order.items) return;
+        
+        // Hoàn thành hàng loạt các món đang chờ/đang làm của riêng bàn này
+        const updatedItems = order.items.map(it => {
+            const status = it.status || 'pending';
+            if (status === 'pending' || status === 'preparing') {
+                return { 
+                    ...it, 
+                    status: 'completed',
+                    completedAt: new Date()
+                };
+            }
+            return it;
+        });
+        
+        try {
+            await updateDoc(doc(db, 'tables', `table_${tableId}`), {
+                items: updatedItems,
+                updatedAt: new Date()
+            });
+            console.log(`Đã hoàn thành toàn bộ món của Bàn ${tableId}`);
+        } catch (err) {
+            console.error("Lỗi khi hoàn thành toàn bộ món:", err);
+            alert("Lỗi kết nối cơ sở dữ liệu online!");
+        }
+    };
+
+    // --- EASTER EGG SECRET FORCE VIEW LOGIC ---
+    window.forceShowLoveArchery = false;
+
+    window.triggerLoveArcherySecret = function() {
+        const code = prompt("Nhập mã xác thực:");
+        if (code === '1234') {
+            window.forceShowLoveArchery = true;
+            window.renderBarDashboard();
+            
+            // Chạy chuỗi hành động: Hiện hình -> Bắn cung -> Biến mất lập tức để test
+            setTimeout(() => {
+                window.triggerLoveArcheryShot();
+            }, 100);
+        } else if (code !== null) {
+            alert("Mã PIN không chính xác!");
+        }
+    };
+
+    window.closeLoveArcherySecret = function() {
+        window.forceShowLoveArchery = false;
+        if (window.loveArcheryHideTimeout) {
+            clearTimeout(window.loveArcheryHideTimeout);
+        }
+        window.renderBarDashboard();
+    };
+
+    window.triggerLoveArcheryShot = function() {
+        if (typeof window.isLoveArcheryReversed === 'undefined') {
+            window.isLoveArcheryReversed = false;
+        }
+
+        // Vẽ lại giao diện để đảm bảo emoji và reversedClass đồng bộ
+        window.renderBarDashboard();
+
+        const zone = document.getElementById('love-animation-zone');
+        if (!zone) return;
+        
+        // 1. Hiện hình
+        zone.style.display = 'block';
+        
+        // 2. Kích hoạt hoạt ảnh bắn cung (Reset bằng reflow)
+        zone.classList.remove('is-shooting');
+        void zone.offsetWidth;
+        zone.classList.add('is-shooting');
+        
+        // 3. Biến mất sau khi hoạt ảnh bắn đường dài hoàn thành (4 giây)
+        if (window.loveArcheryHideTimeout) {
+            clearTimeout(window.loveArcheryHideTimeout);
+        }
+        
+        window.loveArcheryHideTimeout = setTimeout(() => {
+            zone.classList.remove('is-shooting');
+            zone.style.display = 'none';
+        }, 4000);
+    };
+
+    // --- REPORT MODAL LOGIC ---
+    let reportBarChartInstance = null;
+
+    window.openReportModal = function() {
+        const modal = document.getElementById('report-modal');
+        if (!modal) return;
+        
+        // Mặc định chọn tháng hiện tại
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const monthInput = document.getElementById('report-month-select');
+        if (monthInput && !monthInput.value) {
+            monthInput.value = `${yyyy}-${mm}`;
+        }
+        
+        modal.style.display = 'flex';
+        window.updateReportChart();
+    };
+
+    window.closeReportModal = function() {
+        const modal = document.getElementById('report-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.updateReportChart = function() {
+        const monthInput = document.getElementById('report-month-select');
+        if (!monthInput || !monthInput.value) return;
+        
+        const [yearStr, monthStr] = monthInput.value.split('-');
+        const selectedYear = parseInt(yearStr);
+        const selectedMonth = parseInt(monthStr); // 1-indexed (1-12)
+        
+        // Tính số ngày của tháng được chọn
+        const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+        
+        // Tạo mảng doanh thu từng ngày và nhãn trục hoành
+        const dailyRevenue = Array(daysInMonth).fill(0);
+        const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
+        
+        // Tính tổng doanh thu theo từng ngày
+        orderHistory.forEach(order => {
+            if (!order.createdAt) return;
+            
+            let orderDate;
+            if (typeof order.createdAt.toDate === 'function') {
+                orderDate = order.createdAt.toDate();
+            } else if (order.createdAt instanceof Date) {
+                orderDate = order.createdAt;
+            } else if (order.createdAt.seconds) {
+                orderDate = new Date(order.createdAt.seconds * 1000);
+            } else {
+                orderDate = new Date(order.createdAt);
+            }
+            
+            if (orderDate.getFullYear() === selectedYear && (orderDate.getMonth() + 1) === selectedMonth) {
+                const day = orderDate.getDate(); // 1-indexed (1-31)
+                if (day >= 1 && day <= daysInMonth) {
+                    dailyRevenue[day - 1] += order.total || 0;
+                }
+            }
+        });
+        
+        const canvas = document.getElementById('reportBarChart');
+        if (!canvas) return;
+        
+        if (reportBarChartInstance) {
+            reportBarChartInstance.destroy();
+        }
+        
+        reportBarChartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh thu (đ)',
+                    data: dailyRevenue,
+                    backgroundColor: '#0ea5e9',
+                    borderRadius: 6,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Doanh thu: ${context.parsed.y.toLocaleString()} đ`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            font: { family: 'Inter', size: 8, weight: '600' },
+                            color: '#64748b'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            font: { family: 'Inter', size: 9, weight: '600' },
+                            color: '#64748b',
+                            callback: function(value) {
+                                return value >= 1000000 ? (value / 1000000) + 'tr' : (value >= 1000 ? (value / 1000) + 'k' : value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
+
+    // --- IMPORT MENU FROM EXCEL ---
+    window.triggerExcelUpload = function() {
+        const fileInput = document.getElementById('excel-file-input');
+        if (fileInput) {
+            fileInput.click();
+        }
+    };
+
+    window.handleExcelUpload = async function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Reset the file input value so the same file can be uploaded again
+        event.target.value = '';
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                if (!json || json.length === 0) {
+                    alert("❌ File Excel trống hoặc không đúng định dạng!");
+                    return;
+                }
+
+                let addedCount = 0;
+                let skippedCount = 0;
+                let batch = writeBatch(db);
+                let operationCount = 0;
+
+                for (let i = 0; i < json.length; i++) {
+                    const row = json[i];
+                    
+                    // Tìm các cột tương ứng: Tên món, Danh mục, Giá tiền (hỗ trợ cả chữ hoa/thường, có/không dấu)
+                    const nameKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'tên món' || k.trim().toLowerCase() === 'ten mon');
+                    const categoryKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'danh mục' || k.trim().toLowerCase() === 'danh muc');
+                    const priceKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'giá tiền' || k.trim().toLowerCase() === 'gia tien' || k.trim().toLowerCase() === 'giá' || k.trim().toLowerCase() === 'gia');
+
+                    if (!nameKey || !priceKey) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    const name = String(row[nameKey] || '').trim();
+                    const category = String(row[categoryKey] || 'Tất cả').trim();
+                    const price = parseInt(row[priceKey]);
+
+                    // Bỏ qua nếu thiếu tên món hoặc giá tiền không phải là số hợp lệ
+                    if (!name || isNaN(price)) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // TUYỆT ĐỐI KHÔNG GHI ĐÈ: kiểm tra xem món ăn đã tồn tại trên database chưa (qua danh sách menuItems hiện tại)
+                    const nameLower = name.toLowerCase();
+                    const exists = menuItems.some(item => item.name && item.name.trim().toLowerCase() === nameLower);
+                    if (exists) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Đưa vào batch setDoc (sử dụng tên món làm ID tài liệu để đồng bộ với hàm addNewItem)
+                    const docRef = doc(db, 'menu', name);
+                    batch.set(docRef, {
+                        name: name,
+                        price: price,
+                        category: category || 'Tất cả',
+                        createdAt: new Date()
+                    });
+
+                    addedCount++;
+                    operationCount++;
+
+                    // Commit nếu đạt 400 tác vụ (giới hạn của Firestore là 500)
+                    if (operationCount >= 400) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        operationCount = 0;
+                    }
+                }
+
+                if (operationCount > 0) {
+                    await batch.commit();
+                }
+
+                alert(`🎉 Đã nhập thành công ${addedCount} món! (Bỏ qua ${skippedCount} món trùng hoặc thiếu dữ liệu)`);
+            } catch (err) {
+                console.error("Lỗi khi xử lý file Excel:", err);
+                alert("❌ Lỗi khi đọc file hoặc ghi dữ liệu lên hệ thống!");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    // --- KITCHEN NOTIFICATION SOUND & TIMER HELPERS ---
+    function playNotificationSound() {
+        try {
+            // Sử dụng link âm thanh chuông báo chuẩn chất lượng từ CDN
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav');
+            audio.volume = 0.5;
+            audio.play();
+        } catch (err) {
+            console.error("Không thể phát âm thanh thông báo:", err);
+        }
+    }
+
+    function checkNewOrders(currentTablesData) {
+        const currentActiveIds = [];
+        let hasNewOrder = false;
+
+        Object.keys(currentTablesData).forEach(tableId => {
+            const order = currentTablesData[tableId];
+            if (!order || !order.items) return;
+
+            order.items.forEach(it => {
+                const status = it.status || 'pending';
+                if (status === 'pending' || status === 'preparing') {
+                    // Tạo ID định danh duy nhất cho từng món chế biến
+                    const orderedAtVal = it.orderedAt?.seconds 
+                        ? it.orderedAt.seconds * 1000 
+                        : (it.orderedAt instanceof Date ? it.orderedAt.getTime() : 0);
+                    
+                    const uniqueId = `${tableId}_${it.name}_${orderedAtVal}`;
+                    currentActiveIds.push(uniqueId);
+
+                    if (!isFirstLoad && !knownActiveItems.has(uniqueId)) {
+                        hasNewOrder = true;
+                    }
+                }
+            });
+        });
+
+        // Cập nhật bộ nhớ đệm active items
+        knownActiveItems = new Set(currentActiveIds);
+
+        // Lần đầu tải trang chỉ đồng bộ bộ nhớ chứ không kêu chuông
+        if (isFirstLoad) {
+            isFirstLoad = false;
+            return;
+        }
+
+        if (hasNewOrder) {
+            console.log("🔔 Phát hiện món mới được gọi thêm! Đang phát âm thanh báo bếp...");
+            playNotificationSound();
+        }
+    }
+
+    // Thiết lập bộ đếm thời gian chế biến chạy giây/phút liên tục không giật lắc/flicker
+    setInterval(() => {
+        const timers = document.querySelectorAll('.bar-item-timer');
+        const now = Date.now();
+        timers.forEach(timer => {
+            const status = timer.getAttribute('data-status');
+            if (status === 'completed') {
+                timer.style.display = 'none';
+                return;
+            }
+
+            const orderedAt = parseInt(timer.getAttribute('data-ordered-at'));
+            if (isNaN(orderedAt) || orderedAt === 0) return;
+
+            const elapsedSecs = Math.floor((now - orderedAt) / 1000);
+            if (elapsedSecs < 0) return;
+
+            const mins = Math.floor(elapsedSecs / 60);
+            const secs = elapsedSecs % 60;
+            const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+            timer.innerText = `⏳ Làm: ${timeStr}`;
+
+            // Cảnh báo đổi màu:
+            if (elapsedSecs >= 600) { // Quá 10 phút -> ĐỎ nổi bật
+                timer.style.color = '#ef4444';
+                timer.style.background = '#fee2e2';
+                timer.style.fontWeight = '700';
+            } else if (elapsedSecs >= 300) { // Quá 5 phút -> CAM cảnh báo
+                timer.style.color = '#f97316';
+                timer.style.background = '#ffedd5';
+                timer.style.fontWeight = '600';
+            } else { // Bình thường -> XÁM tinh tế
+                timer.style.color = '#64748b';
+                timer.style.background = '#f1f5f9';
+                timer.style.fontWeight = '500';
+            }
+        });
+    }, 1000);
 
     // Khởi chạy ứng dụng
     window.initApp();

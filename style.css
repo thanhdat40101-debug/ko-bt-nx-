@@ -653,10 +653,19 @@ body {
 }
 
 .table-active {
-    background-color: #eff6ff;
-    border-color: #3b82f6;
-    color: #1d4ed8;
+    background-color: #FFEBBF !important;
+    border-color: #F59E0B !important;
+    color: #B45309 !important;
     position: relative;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
+}
+
+.table-checkin-time {
+    font-size: 10.5px !important;
+    font-weight: 500 !important;
+    color: #8C8C8C !important;
+    margin-top: 4px;
+    letter-spacing: 0.2px;
 }
 
 .table-active::after {
@@ -1756,12 +1765,33 @@ body.role-bar-active .bottom-nav {
 
 .bar-item-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
     background: #f8fafc;
     border-radius: 12px;
     border: 1px solid #f1f5f9;
+}
+
+.bar-item-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.bar-item-timer {
+    font-size: 11px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
 }
 
 .bar-item-info {
@@ -1870,4 +1900,312 @@ body.role-bar-active .bottom-nav {
     color: #15803d;
 }
 
+/* --- TABLE DRAG & DROP STYLES --- */
+.table-item {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none; /* Disables browser-default pan/zoom/scroll gestures on table items */
+}
 
+/* Original item being dragged */
+.table-item.table-dragging {
+    opacity: 0.4 !important;
+    border: 2px dashed #94a3b8 !important;
+    background: #f8fafc !important;
+    box-shadow: none !important;
+    transform: scale(0.95);
+}
+
+/* Target table item hovered over during drag */
+.table-item.table-hovered-target {
+    transform: scale(1.05);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* --- UTILITY CLASS FOR HIDING --- */
+.hidden {
+    display: none !important;
+}
+
+@media print {
+    .hidden, .hidden * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+}
+
+/* --- DARK THEME FOR BAR/KITCHEN DASHBOARD --- */
+body.dark-theme {
+    background-color: #121212 !important;
+    color: #f5f5f5 !important;
+}
+
+body.dark-theme .app-container {
+    background-color: #121212 !important;
+    box-shadow: none !important;
+}
+
+body.dark-theme .top-header {
+    background: #18191a !important;
+    border-bottom: 1px solid #2d2f31 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-theme .top-header .main-title {
+    color: #ffffff !important;
+}
+
+body.dark-theme .top-header .current-date {
+    color: #b0b3b8 !important;
+}
+
+body.dark-theme .user-badge {
+    background: #242526 !important;
+    color: #ffffff !important;
+    border-color: #3a3b3c !important;
+}
+
+body.dark-theme .logout-btn {
+    background: #242526 !important;
+    border-color: #3a3b3c !important;
+    color: #f87171 !important;
+}
+
+body.dark-theme .main-content {
+    background: #121212 !important;
+}
+
+body.dark-theme .bar-header {
+    background: #18191a !important;
+    border-color: #2d2f31 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark-theme .bar-header .screen-title {
+    color: #ffffff !important;
+}
+
+body.dark-theme .bar-header .screen-subtitle {
+    color: #b0b3b8 !important;
+}
+
+body.dark-theme .bar-filter-tabs {
+    background: #242526 !important;
+}
+
+body.dark-theme .bar-filter-btn {
+    color: #b0b3b8 !important;
+}
+
+body.dark-theme .bar-filter-btn.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .bar-order-card {
+    background: #18191a !important;
+    border-color: #2d2f31 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-theme .bar-order-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6) !important;
+    border-color: #3a3b3c !important;
+}
+
+body.dark-theme .bar-card-header {
+    border-bottom: 2px solid #2d2f31 !important;
+}
+
+body.dark-theme .bar-table-title {
+    color: #38bdf8 !important;
+}
+
+body.dark-theme .bar-time {
+    background: #242526 !important;
+    color: #b0b3b8 !important;
+}
+
+body.dark-theme .bar-item-row {
+    background: #242526 !important;
+    border-color: #2d2f31 !important;
+}
+
+body.dark-theme .bar-item-name {
+    color: #ffffff !important;
+}
+
+body.dark-theme .bar-item-qty {
+    background: #1e3a8a !important;
+    color: #93c5fd !important;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+body.dark-theme .bar-item-timer {
+    background: #2d2f31 !important;
+    color: #b0b3b8 !important;
+}
+
+body.dark-theme .bar-status-badge.pending {
+    background: #451a03 !important;
+    color: #fdba74 !important;
+}
+
+body.dark-theme .bar-status-badge.preparing {
+    background: #431407 !important;
+    color: #f97316 !important;
+}
+
+body.dark-theme .bar-status-badge.completed {
+    background: #064e3b !important;
+    color: #6ee7b7 !important;
+}
+
+body.dark-theme .bar-action-btn.start {
+    background: #1e3a8a !important;
+    color: #93c5fd !important;
+    border: 1px solid #2563eb !important;
+}
+
+body.dark-theme .bar-action-btn.start:hover {
+    background: #2563eb !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .bar-action-btn.done {
+    background: #064e3b !important;
+    color: #6ee7b7 !important;
+    border: 1px solid #059669 !important;
+}
+
+body.dark-theme .bar-action-btn.done:hover {
+    background: #059669 !important;
+    color: #ffffff !important;
+}
+
+/* --- BAR EMPTY STATE STYLES --- */
+.bar-empty-view {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    border: 1px dashed #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.02);
+}
+
+.bar-empty-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.bar-empty-desc {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* Dark Mode overrides for Empty State */
+body.dark-theme .bar-empty-view {
+    background: #18191a !important;
+    border-color: #2d2f31 !important;
+    box-shadow: none !important;
+}
+
+body.dark-theme .bar-empty-title {
+    color: #ffffff !important;
+}
+
+body.dark-theme .bar-empty-desc {
+    color: #b0b3b8 !important;
+}
+
+/* --- EASTER EGG: LOVE ARCHERY LONG DISTANCE ANIMATION --- */
+.love-animation-zone {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 220px;
+    margin-top: 20px;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+.love-actors {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.actor-left, .actor-right {
+    font-size: 44px;
+    position: absolute;
+    bottom: 30px;
+    transition: all 0.3s ease;
+}
+
+.actor-left {
+    left: 40px;
+    animation: bob 2s infinite ease-in-out;
+}
+
+.actor-right {
+    right: 40px;
+    animation: dance 2s infinite ease-in-out;
+}
+
+.arrow-heart-container {
+    position: absolute;
+    left: 90px;
+    right: 90px;
+    bottom: 48px;
+    height: 30px;
+}
+
+.arrow-heart {
+    position: absolute;
+    font-size: 26px;
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Shooting animation activation */
+.love-animation-zone.is-shooting:not(.is-reversed) .arrow-heart {
+    visibility: visible;
+    animation: shoot-long-right 3.5s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.love-animation-zone.is-shooting.is-reversed .arrow-heart {
+    visibility: visible;
+    animation: shoot-long-left 3.5s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes shoot-long-right {
+    0% { left: 0%; opacity: 0; transform: scale(0.8) rotate(0deg); }
+    5% { opacity: 1; transform: scale(1.1) rotate(-5deg); }
+    15% { transform: scale(1) rotate(0deg); }
+    85% { opacity: 1; }
+    95% { left: 92%; opacity: 0; transform: scale(1.2) rotate(5deg); }
+    100% { left: 92%; opacity: 0; }
+}
+
+@keyframes shoot-long-left {
+    0% { left: 92%; opacity: 0; transform: scaleX(-1) scale(0.8) rotate(0deg); }
+    5% { opacity: 1; transform: scaleX(-1) scale(1.1) rotate(5deg); }
+    15% { transform: scaleX(-1) scale(1) rotate(0deg); }
+    85% { opacity: 1; }
+    95% { left: 0%; opacity: 0; transform: scaleX(-1) scale(1.2) rotate(-5deg); }
+    100% { left: 0%; opacity: 0; }
+}
+
+@keyframes dance {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(10deg); }
+}
+
+@keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}

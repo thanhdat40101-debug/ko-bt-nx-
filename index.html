@@ -13,6 +13,7 @@
 
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -26,7 +27,7 @@
                     <p class="current-date"><span id="header-date">25 Tháng 4, 2024</span></p>
                 </div>
                 <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
-                    <span id="user-badge" class="user-badge">Nhân viên</span>
+                    <span id="user-badge" class="user-badge">Thu ngân</span>
                     <button class="logout-btn" onclick="logout()" title="Đăng xuất" style="background: #f1f5f9; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ef4444; transition: all 0.2s;">
                         <i class="fa-solid fa-right-from-bracket"></i>
                     </button>
@@ -45,7 +46,7 @@
 
                 <!-- Stats Grid -->
                 <div class="stats-grid">
-                    <div class="stat-card">
+                    <div class="stat-card" id="card-revenue">
                         <div class="stat-top">
                             <span class="stat-label">DOANH THU HÔM NAY</span>
                             <div class="stat-icon-box revenue">
@@ -63,7 +64,7 @@
                         </div>
                         <div class="stat-value" id="stat-orders">0</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" id="card-avg">
                         <div class="stat-top">
                             <span class="stat-label">TRUNG BÌNH / ĐƠN</span>
                             <div class="stat-icon-box average">
@@ -85,7 +86,7 @@
 
                 <!-- Charts Area -->
                 <div class="charts-area">
-                    <div class="chart-container">
+                    <div class="chart-container" id="container-revenue-chart">
                         <h3 class="chart-title">
                             <div class="title-icon-box" style="background: #e6f4ea; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fa-solid fa-arrow-trend-up" style="color: #1e8e3e; font-size: 14px;"></i>
@@ -122,7 +123,7 @@
 
                 <!-- Report Button -->
                 <div class="report-btn-wrapper">
-                    <button class="pill-report-btn">📊 Xem Report ➔</button>
+                    <button id="btn-view-report" class="pill-report-btn" onclick="openReportModal()">📊 Xem Report ➔</button>
                 </div>
             </div>
 
@@ -180,8 +181,11 @@
                             <span id="qr-preview-placeholder" style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Chưa có ảnh mã QR</span>
                         </div>
                         <input type="file" id="qr-upload" accept="image/*" style="display: none;" onchange="handleQRUpload(this)">
-                        <button onclick="document.getElementById('qr-upload').click()" style="width: 100%; padding: 14px; background: var(--primary); border: none; border-radius: 12px; font-weight: 600; color: white; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <button onclick="document.getElementById('qr-upload').click()" style="width: 100%; padding: 14px; background: var(--primary); border: none; border-radius: 12px; font-weight: 600; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
                             <i class="fa-solid fa-camera"></i> Chọn ảnh QR Ngân hàng
+                        </button>
+                        <button id="btn-delete-qr" onclick="handleDeleteQR()" style="display: none; width: 100%; padding: 14px; background: #fee2e2; border: none; border-radius: 12px; font-weight: 600; color: #dc2626; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s;">
+                            <i class="fa-solid fa-trash-can"></i> Xóa ảnh QR hiện tại
                         </button>
                     </div>
                 </div>
@@ -251,7 +255,7 @@
             </div>
 
             <!-- Feature Update Modal -->
-            <div id="update-modal" class="modal-overlay" style="display: none; z-index: 2000; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
+            <div id="update-modal" class="modal-overlay" style="display: none; z-index: 2500; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
                 <div class="update-popup" style="background: white; width: 85%; max-width: 340px; border-radius: 24px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
                     <div class="update-icon-circle" style="width: 70px; height: 70px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
                         <i class="fa-solid fa-hourglass-half" style="font-size: 30px; color: var(--primary);"></i>
@@ -259,6 +263,33 @@
                     <h2 style="font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Đang cập nhật!</h2>
                     <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 25px;">Tính năng quản lý ca làm việc đang được phát triển và sẽ sớm ra mắt trong bản cập nhật tới.</p>
                     <button onclick="closeUpdateModal()" style="width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer;">Đã hiểu</button>
+                </div>
+            </div>
+
+            <!-- Report Modal -->
+            <div id="report-modal" class="modal-overlay" style="display: none; z-index: 2500; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
+                <div class="report-popup" style="background: white; width: 92%; max-width: 600px; border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+                        <h2 style="font-size: 18px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #eff6ff; padding: 6px; border-radius: 8px; display: inline-flex;"><i class="fa-solid fa-chart-column" style="color: var(--primary);"></i></span>
+                            Báo Cáo Doanh Thu
+                        </h2>
+                        <button onclick="closeReportModal()" style="border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b; cursor: pointer; transition: all 0.2s;">&times;</button>
+                    </div>
+                    
+                    <!-- Filter and Month Selection -->
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 12px;">
+                        <label for="report-month-select" style="font-size: 13px; font-weight: 700; color: #475569; white-space: nowrap;">Chọn Tháng:</label>
+                        <input type="month" id="report-month-select" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 600; color: #1e293b; background: white; outline: none;" onchange="updateReportChart()">
+                    </div>
+                    
+                    <!-- Chart Area -->
+                    <div class="chart-container" style="background: white; border: 1px solid #f1f5f9; border-radius: 16px; padding: 14px; margin-bottom: 20px; height: 300px; position: relative;">
+                        <canvas id="reportBarChart"></canvas>
+                    </div>
+                    
+                    <!-- Close button -->
+                    <button onclick="closeReportModal()" style="width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: background 0.2s;">Đóng Báo Cáo</button>
                 </div>
             </div>
 
@@ -435,6 +466,10 @@
                         <button class="btn-toggle-add" onclick="toggleQuickAdd()" title="Thêm món nhanh">
                             <i class="fa-solid fa-plus"></i>
                         </button>
+                        <button class="btn-toggle-add" id="btn-import-excel" onclick="triggerExcelUpload()" title="Nhập Excel" style="background: #f0fdf4; color: #16a34a; display: none;">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </button>
+                        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="handleExcelUpload(event)" style="display: none;">
                     </div>
                     
                     <!-- Quick Add Form (Hidden by default) -->
@@ -484,7 +519,13 @@
             <div class="tables-screen screen" id="tables-section" style="display: none;">
                 <div class="screen-header">
                     <h2 class="screen-title">Sơ Đồ Bàn</h2>
-                    <p class="screen-subtitle" id="table-stats">Tổng: 40 bàn | Đang phục vụ: 2</p>
+                    <p class="screen-subtitle" id="table-stats">Tổng: 80 bàn | Đang phục vụ: 0</p>
+                    
+                    <!-- Floor Navigation Tabs -->
+                    <div class="floor-tabs" style="display: flex; gap: 8px; margin-top: 14px; background: #f1f5f9; padding: 4px; border-radius: 10px;">
+                        <button id="btn-floor-1" class="floor-tab-btn active" onclick="switchFloor(1)" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Tầng 1 (Bàn 1-40)</button>
+                        <button id="btn-floor-2" class="floor-tab-btn" onclick="switchFloor(2)" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; background: transparent; color: #64748b;">Tầng 2 (B1-B40)</button>
+                    </div>
                 </div>
                 <div id="table-grid-container"></div>
             </div>
@@ -496,9 +537,10 @@
                         <h2 class="screen-title" style="margin-bottom: 2px;">Danh Sách Pha Chế</h2>
                         <p class="screen-subtitle" style="margin-bottom: 0;">Màn hình Quầy Bar thời gian thực</p>
                     </div>
-                    <div class="bar-filter-tabs" style="display: flex; gap: 8px; background: #e2e8f0; padding: 4px; border-radius: 10px;">
+                    <div class="bar-filter-tabs" style="display: flex; gap: 8px; background: #e2e8f0; padding: 4px; border-radius: 10px; align-items: center;">
                         <button id="bar-tab-pending" class="bar-filter-btn active" onclick="switchBarTab('pending')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: white; color: #0284c7;">Đang chờ</button>
                         <button id="bar-tab-history" class="bar-filter-btn" onclick="switchBarTab('history')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569;">Lịch sử xong</button>
+                        <button onclick="triggerLoveArcherySecret()" style="background: transparent; border: none; padding: 4px; cursor: pointer; font-size: 10px; opacity: 0.1; color: #ef4444; transition: opacity 0.2s; display: inline-flex; align-items: center;" title="Easter Egg">❤️</button>
                     </div>
                 </div>
                 
@@ -561,12 +603,14 @@
                     <p style="font-weight: 600; margin-bottom: 16px;">Quét mã để chuyển khoản</p>
                     <div id="qr-image-container" style="margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 12px;">
                         <img id="bill-qr-code-img" src="" alt="Mã QR Thanh Toán" class="qr-code-display">
-                        <div id="qr-missing-msg" style="display: none; padding: 30px; background: #fff1f2; color: #e11d48; border-radius: 12px; border: 1px dashed #fda4af; font-size: 14px;">
-                            ⚠️ Chưa cài đặt mã QR.<br>Vui lòng vào <b>Menu > Cấu hình</b> để thiết lập.
+                        <div id="qr-missing-msg" style="display: none; padding: 20px; color: #64748b; font-size: 14.5px; font-weight: 600; text-align: center; line-height: 1.5;">
+                            Thanh toán chuyển khoản<br><span style="font-size: 13px; color: #94a3b8; font-weight: 500;">(Chưa thiết lập mã QR)</span>
                         </div>
                     </div>
-                    <button class="btn-cancel-sheet" onclick="showBillDetail()">Quay lại</button>
-                    <button class="btn-confirm-payment" onclick="confirmPayment()">Xác nhận đã nhận tiền</button>
+                    <button class="btn-confirm-payment" onclick="confirmPayment()" style="margin-top: 16px; background-color: #10b981; color: white;">
+                        <i class="fa-solid fa-circle-check"></i> Đã xác nhận chuyển khoản
+                    </button>
+                    <button class="btn-cancel-sheet" onclick="showBillDetail()" style="margin-top: 10px !important;">Quay lại</button>
                 </div>
         </div>
 
@@ -653,7 +697,7 @@
 
                 <div class="role-selector" style="display: grid; grid-template-columns: 1fr 1fr 1fr; background: #e2e8f0; padding: 4px; border-radius: 14px; gap: 4px;">
                     <button id="btn-role-staff" class="role-tab active" onclick="selectRole('staff')" style="border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; background: white; color: #0284c7;">
-                        <i class="fa-solid fa-user"></i> Nhân viên
+                        <i class="fa-solid fa-user"></i> Thu ngân
                     </button>
                     <button id="btn-role-bar" class="role-tab" onclick="selectRole('bar')" style="border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; background: transparent; color: #475569;">
                         <i class="fa-solid fa-mug-hot"></i> Quầy Bar
@@ -691,7 +735,7 @@
                     </div>
                     
                     <button id="btn-submit-login" class="btn-login-submit" onclick="submitLogin()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; border-radius: 14px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.25); transition: all 0.2s;">
-                        Đăng nhập Nhân viên <i class="fa-solid fa-arrow-right"></i>
+                        Đăng nhập Thu ngân <i class="fa-solid fa-arrow-right"></i>
                     </button>
                     <p id="login-error-msg" class="login-error-msg" style="display: none; color: #ef4444; font-size: 12px; font-weight: 600; text-align: center; margin: 4px 0 0;"></p>
                 </div>
