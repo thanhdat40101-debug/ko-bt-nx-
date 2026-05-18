@@ -626,8 +626,6 @@ body {
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     padding: 8px 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
 }
 
