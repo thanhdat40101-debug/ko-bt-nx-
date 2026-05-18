@@ -2048,10 +2048,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet);
+                
+                // Đọc toàn bộ sheet thành mảng 2 chiều (mỗi phần tử là một hàng)
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                if (!json || json.length === 0) {
+                if (!rows || rows.length === 0) {
                     alert("❌ File Excel trống hoặc không đúng định dạng!");
+                    return;
+                }
+
+                // Tìm dòng tiêu đề chứa chữ "Tên Món" / "Ten Mon"
+                let headerRowIndex = -1;
+                let nameColIndex = -1;
+                let categoryColIndex = -1;
+                let priceColIndex = -1;
+
+                for (let r = 0; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || !Array.isArray(row)) continue;
+                    
+                    // Tìm xem trong hàng này có cột nào là "Tên Món" không
+                    const nameIdx = row.findIndex(cell => {
+                        if (cell === undefined || cell === null) return false;
+                        const cellStr = String(cell).trim().toLowerCase();
+                        return cellStr === 'tên món' || cellStr === 'ten mon';
+                    });
+
+                    if (nameIdx !== -1) {
+                        headerRowIndex = r;
+                        nameColIndex = nameIdx;
+                        
+                        // Tìm thêm các cột danh mục và giá tiền trong chính dòng tiêu đề này
+                        categoryColIndex = row.findIndex(cell => {
+                            if (cell === undefined || cell === null) return false;
+                            const cellStr = String(cell).trim().toLowerCase();
+                            return cellStr === 'danh mục' || cellStr === 'danh muc';
+                        });
+
+                        priceColIndex = row.findIndex(cell => {
+                            if (cell === undefined || cell === null) return false;
+                            const cellStr = String(cell).trim().toLowerCase();
+                            return cellStr === 'giá tiền' || cellStr === 'gia tien' || cellStr === 'giá' || cellStr === 'gia';
+                        });
+
+                        break; // Đã tìm thấy dòng tiêu đề, dừng tìm kiếm
+                    }
+                }
+
+                if (headerRowIndex === -1 || nameColIndex === -1 || priceColIndex === -1) {
+                    alert("❌ Không tìm thấy tiêu đề cột 'Tên Món' hoặc cột 'Giá tiền' trong file Excel!");
                     return;
                 }
 
@@ -2060,22 +2105,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 let batch = writeBatch(db);
                 let operationCount = 0;
 
-                for (let i = 0; i < json.length; i++) {
-                    const row = json[i];
+                // Bắt đầu duyệt dữ liệu từ các dòng phía dưới dòng tiêu đề
+                for (let i = headerRowIndex + 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || !Array.isArray(row) || row.length === 0) continue;
+
+                    const name = String(row[nameColIndex] || '').trim();
+                    const category = categoryColIndex !== -1 ? String(row[categoryColIndex] || 'Tất cả').trim() : 'Tất cả';
                     
-                    // Tìm các cột tương ứng: Tên món, Danh mục, Giá tiền (hỗ trợ cả chữ hoa/thường, có/không dấu)
-                    const nameKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'tên món' || k.trim().toLowerCase() === 'ten mon');
-                    const categoryKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'danh mục' || k.trim().toLowerCase() === 'danh muc');
-                    const priceKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'giá tiền' || k.trim().toLowerCase() === 'gia tien' || k.trim().toLowerCase() === 'giá' || k.trim().toLowerCase() === 'gia');
-
-                    if (!nameKey || !priceKey) {
-                        skippedCount++;
-                        continue;
-                    }
-
-                    const name = String(row[nameKey] || '').trim();
-                    const category = String(row[categoryKey] || 'Tất cả').trim();
-                    const price = parseInt(row[priceKey]);
+                    // Đọc giá trị tiền và chuyển đổi sang số nguyên
+                    const rawPrice = row[priceColIndex];
+                    const price = parseInt(rawPrice);
 
                     // Bỏ qua nếu thiếu tên món hoặc giá tiền không phải là số hợp lệ
                     if (!name || isNaN(price)) {
