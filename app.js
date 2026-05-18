@@ -2038,6 +2038,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (!file) return;
 
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls') && !fileName.endsWith('.csv')) {
+            alert("❌ Vui lòng chọn file định dạng .xlsx, .xls hoặc .csv!");
+            event.target.value = '';
+            return;
+        }
+
+        const isCSV = fileName.endsWith('.csv');
+
         // Reset the file input value so the same file can be uploaded again
         event.target.value = '';
 
@@ -2045,6 +2054,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = async function(e) {
             try {
                 const data = new Uint8Array(e.target.result);
+                // SheetJS tự động nhận biết định dạng CSV / XLSX khi truyền mảng byte
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
@@ -2053,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
                 if (!rows || rows.length === 0) {
-                    alert("❌ File Excel trống hoặc không đúng định dạng!");
+                    alert("❌ File trống hoặc không đúng định dạng!");
                     return;
                 }
 
@@ -2067,11 +2077,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const row = rows[r];
                     if (!row || !Array.isArray(row)) continue;
                     
-                    // Tìm xem trong hàng này có cột nào là "Tên Món" không
+                    // Tìm xem trong hàng này có cột nào chứa "Tên Món" / "Ten Mon" không
                     const nameIdx = row.findIndex(cell => {
                         if (cell === undefined || cell === null) return false;
                         const cellStr = String(cell).trim().toLowerCase();
-                        return cellStr === 'tên món' || cellStr === 'ten mon';
+                        return cellStr.includes('tên món') || cellStr.includes('ten mon');
                     });
 
                     if (nameIdx !== -1) {
@@ -2082,13 +2092,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         categoryColIndex = row.findIndex(cell => {
                             if (cell === undefined || cell === null) return false;
                             const cellStr = String(cell).trim().toLowerCase();
-                            return cellStr === 'danh mục' || cellStr === 'danh muc';
+                            return cellStr.includes('danh mục') || cellStr.includes('danh muc');
                         });
 
                         priceColIndex = row.findIndex(cell => {
                             if (cell === undefined || cell === null) return false;
                             const cellStr = String(cell).trim().toLowerCase();
-                            return cellStr === 'giá tiền' || cellStr === 'gia tien' || cellStr === 'giá' || cellStr === 'gia';
+                            return cellStr.includes('giá tiền') || 
+                                   cellStr.includes('gia tien') || 
+                                   cellStr.includes('giá (vnđ)') || 
+                                   cellStr.includes('gia (vnd)') || 
+                                   cellStr === 'giá' || 
+                                   cellStr === 'gia';
                         });
 
                         break; // Đã tìm thấy dòng tiêu đề, dừng tìm kiếm
@@ -2096,7 +2111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (headerRowIndex === -1 || nameColIndex === -1 || priceColIndex === -1) {
-                    alert("❌ Không tìm thấy tiêu đề cột 'Tên Món' hoặc cột 'Giá tiền' trong file Excel!");
+                    alert("❌ Không tìm thấy tiêu đề cột 'Tên Món' hoặc cột 'Giá tiền / Giá (VNĐ)' trong file!");
                     return;
                 }
 
@@ -2111,11 +2126,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!row || !Array.isArray(row) || row.length === 0) continue;
 
                     const name = String(row[nameColIndex] || '').trim();
-                    const category = categoryColIndex !== -1 ? String(row[categoryColIndex] || 'Tất cả').trim() : 'Tất cả';
                     
-                    // Đọc giá trị tiền và chuyển đổi sang số nguyên
+                    // Đặt danh mục: nếu là file CSV thì mặc định là "Menu Aha", còn Excel thì lấy cột Danh mục
+                    let category = 'Tất cả';
+                    if (isCSV) {
+                        category = 'Menu Aha';
+                    } else if (categoryColIndex !== -1) {
+                        category = String(row[categoryColIndex] || 'Tất cả').trim();
+                    }
+                    
+                    // Đọc giá trị tiền và chuyển đổi sang số nguyên, hỗ trợ làm sạch chuỗi
                     const rawPrice = row[priceColIndex];
-                    const price = parseInt(rawPrice);
+                    let price = NaN;
+                    if (rawPrice !== undefined && rawPrice !== null) {
+                        if (typeof rawPrice === 'number') {
+                            price = Math.round(rawPrice);
+                        } else {
+                            // Loại bỏ dấu chấm, dấu phẩy, khoảng trắng, chữ đ... để parse chính xác "55.000" thành 55000
+                            const cleanedPriceStr = String(rawPrice).replace(/[\.,\sđđ]/g, '');
+                            price = parseInt(cleanedPriceStr);
+                        }
+                    }
 
                     // Bỏ qua nếu thiếu tên món hoặc giá tiền không phải là số hợp lệ
                     if (!name || isNaN(price)) {
@@ -2157,7 +2188,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 alert(`🎉 Đã nhập thành công ${addedCount} món! (Bỏ qua ${skippedCount} món trùng hoặc thiếu dữ liệu)`);
             } catch (err) {
-                console.error("Lỗi khi xử lý file Excel:", err);
+                console.error("Lỗi khi xử lý file dữ liệu:", err);
                 alert("❌ Lỗi khi đọc file hoặc ghi dữ liệu lên hệ thống!");
             }
         };
