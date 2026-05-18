@@ -626,12 +626,13 @@ body {
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     padding: 8px 0;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    touch-action: auto;
+    height: calc(100vh - 220px) !important; /* Đặt chiều cao cố định để tạo vùng cuộn riêng (trừ header, bottom menu, floor tabs) */
+    overflow-y: auto !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
-.table-item {
+.table-item, .table-card {
     aspect-ratio: 1;
     border-radius: 8px;
     display: flex;
@@ -643,7 +644,7 @@ body {
     border: 1px solid transparent;
     transition: all 0.2s;
     cursor: pointer;
-    touch-action: auto;
+    touch-action: auto !important;
 }
 
 .table-item:active {
@@ -1905,10 +1906,10 @@ body.role-bar-active .bottom-nav {
 }
 
 /* --- TABLE DRAG & DROP STYLES --- */
-.table-item {
+.table-item, .table-card {
     user-select: none;
     -webkit-user-select: none;
-    touch-action: none; /* Disables browser-default pan/zoom/scroll gestures on table items */
+    touch-action: auto !important; /* Đảm bảo ô bàn mặc định cho phép cuộn trang tự nhiên */
 }
 
 /* Original item being dragged */
