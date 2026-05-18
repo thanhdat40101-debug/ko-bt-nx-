@@ -248,12 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const DRAG_THRESHOLD = 8; // Ngưỡng dịch chuyển (pixels) để kích hoạt kéo lập tức
         const LONG_PRESS_DELAY = 250; // Thời gian nhấn giữ (ms) để bắt đầu kéo
 
-        // Ngăn trình duyệt cuộn trang khi đang kéo trên thiết bị di động
-        container.addEventListener('touchmove', function(e) {
-            if (isDragging) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+
 
         const startDragAttempt = function(clientX, clientY, targetEl) {
             const tableItem = targetEl.closest('.table-item');
@@ -281,6 +276,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDragging || !activeTargetEl) return;
             isDragging = true;
 
+            // Kích hoạt touch-action: none cho phần tử đang kéo để tránh cuộn trang
+            activeTargetEl.style.touchAction = 'none';
+
             // Tạo một helper drag để hiển thị hiệu ứng kéo theo tay/chuột
             dragHelper = activeTargetEl.cloneNode(true);
             dragHelper.style.position = 'fixed';
@@ -300,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activeTargetEl.classList.add('table-dragging');
         };
 
-        const moveDrag = function(clientX, clientY) {
+        const moveDrag = function(clientX, clientY, isTouch = false) {
             if (!draggedTableId) return;
 
             if (isDragging) {
@@ -342,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } else {
-                // Tính khoảng cách dịch chuyển để xem có kích hoạt kéo sớm không
+                // Tính khoảng cách dịch chuyển
                 const dx = clientX - startX;
                 const dy = clientY - startY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -352,7 +350,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         clearTimeout(dragStartTimer);
                         dragStartTimer = null;
                     }
-                    initiateDrag(clientX, clientY);
+                    
+                    if (isTouch) {
+                        // Nếu đang vuốt cảm ứng trên di động và dịch chuyển quá nhanh khi chưa qua 250ms long-press
+                        // chứng tỏ người dùng đang CUỘN trang tự nhiên, hủy chế độ kéo để cho trình duyệt cuộn mượt.
+                        draggedTableId = null;
+                        activeTargetEl = null;
+                    } else {
+                        // Với chuột (PC), kích hoạt kéo bàn lập tức khi di chuột
+                        initiateDrag(clientX, clientY);
+                    }
                 }
             }
         };
@@ -364,7 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Loại bỏ class kéo của phần tử gốc
             const originEl = document.getElementById(`table-${draggedTableId}`);
-            if (originEl) originEl.classList.remove('table-dragging');
+            if (originEl) {
+                originEl.classList.remove('table-dragging');
+                originEl.style.touchAction = ''; // Giải phóng touch-action
+            }
 
             // Làm sạch highlight của bàn mục tiêu
             if (lastHoveredTableId) {
@@ -387,6 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             draggedTableId = null;
             lastHoveredTableId = null;
+            if (activeTargetEl) {
+                activeTargetEl.style.touchAction = ''; // Giải phóng touch-action
+            }
             activeTargetEl = null;
 
             if (from && to && from !== to) {
@@ -408,6 +421,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 dragStartTimer = null;
             }
 
+            if (activeTargetEl) {
+                activeTargetEl.style.touchAction = ''; // Giải phóng touch-action
+            }
+
             if (isDragging) {
                 endDrag();
             } else {
@@ -424,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('mousemove', function(e) {
-            moveDrag(e.clientX, e.clientY);
+            moveDrag(e.clientX, e.clientY, false);
         });
 
         document.addEventListener('mouseup', function(e) {
@@ -440,9 +457,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                e.preventDefault(); // CHỈ ngăn cuộn trang khi thực sự đang thực hiện hành động kéo bàn
+            }
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
-                moveDrag(touch.clientX, touch.clientY);
+                moveDrag(touch.clientX, touch.clientY, true);
             }
         }, { passive: false });
 
@@ -1659,42 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('bar-grid');
         if (!grid) return;
 
-        // ÉP kích hoạt xem thử Easter Egg nếu cờ forceShowLoveArchery được bật
-        if (window.forceShowLoveArchery) {
-            if (typeof window.isLoveArcheryReversed === 'undefined') {
-                window.isLoveArcheryReversed = false;
-            }
-            
-            const reversedClass = window.isLoveArcheryReversed ? 'is-reversed' : '';
-            const boyShootingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
-            const boyDancingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
-            const girlDancingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
-            const girlShootingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
-            
-            grid.innerHTML = `
-                <div class="bar-empty-view" style="position: relative; padding: 80px 20px;">
-                    <button onclick="window.closeLoveArcherySecret()" class="bar-action-btn done" style="position: absolute; top: 16px; right: 16px; font-size: 11px; padding: 4px 10px; border-radius: 8px;">
-                        <i class="fa-solid fa-xmark"></i> Đóng chế độ xem thử
-                    </button>
-                    <p class="bar-empty-title">Chế độ xem thử Easter Egg</p>
-                    <p class="bar-empty-desc">Hiệu ứng chuyển động "Bắn cung tình yêu" đang được kích hoạt!</p>
-                </div>
-                <div id="love-animation-zone" class="love-animation-zone ${reversedClass}" style="display: none;">
-                    <div class="love-actors">
-                        <span class="actor-left boy-shooting" style="display: ${boyShootingDisplay};">👦🏹</span>
-                        <span class="actor-left boy-dancing" style="display: ${boyDancingDisplay};">🕺</span>
-                        
-                        <span class="arrow-heart-container">
-                            <span class="arrow-heart">💘</span>
-                        </span>
-                        
-                        <span class="actor-right girl-dancing" style="display: ${girlDancingDisplay};">💃</span>
-                        <span class="actor-right girl-shooting" style="display: ${girlShootingDisplay}; transform: scaleX(-1);">👩🏹</span>
-                    </div>
-                </div>
-            `;
-            return;
-        }
+
 
         let hasAnyItems = false;
         let html = '';
@@ -1869,45 +1854,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (!hasAnyItems) {
-            if (typeof window.isLoveArcheryReversed === 'undefined') {
-                window.isLoveArcheryReversed = false;
-            }
-            if (!window.loveArcheryInterval) {
-                window.loveArcheryInterval = setInterval(() => {
-                    // Chỉ kích hoạt nếu không có đơn hàng nào đang chờ làm
-                    const grid = document.getElementById('bar-grid');
-                    if (!grid || grid.querySelector('.bar-order-card')) {
-                        return; // Có đơn hàng, bỏ qua lượt
-                    }
-
-                    window.isLoveArcheryReversed = !window.isLoveArcheryReversed;
-                    window.triggerLoveArcheryShot();
-                }, 1800000); // 30 phút
-            }
-
-            const reversedClass = window.isLoveArcheryReversed ? 'is-reversed' : '';
-            const boyShootingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
-            const boyDancingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
-            const girlDancingDisplay = window.isLoveArcheryReversed ? 'none' : 'inline-block';
-            const girlShootingDisplay = window.isLoveArcheryReversed ? 'inline-block' : 'none';
-
             html = `
                 <div class="bar-empty-view">
                     <p class="bar-empty-title">Quầy pha chế trống</p>
                     <p class="bar-empty-desc">Không có món nào cần thực hiện lúc này.</p>
-                </div>
-                <div id="love-animation-zone" class="love-animation-zone ${reversedClass}" style="display: none;">
-                    <div class="love-actors">
-                        <span class="actor-left boy-shooting" style="display: ${boyShootingDisplay};">👦🏹</span>
-                        <span class="actor-left boy-dancing" style="display: ${boyDancingDisplay};">🕺</span>
-                        
-                        <span class="arrow-heart-container">
-                            <span class="arrow-heart">💘</span>
-                        </span>
-                        
-                        <span class="actor-right girl-dancing" style="display: ${girlDancingDisplay};">💃</span>
-                        <span class="actor-right girl-shooting" style="display: ${girlShootingDisplay}; transform: scaleX(-1);">👩🏹</span>
-                    </div>
                 </div>
             `;
         }
@@ -1973,61 +1923,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- EASTER EGG SECRET FORCE VIEW LOGIC ---
-    window.forceShowLoveArchery = false;
 
-    window.triggerLoveArcherySecret = function() {
-        const code = prompt("Nhập mã xác thực:");
-        if (code === '1234') {
-            window.forceShowLoveArchery = true;
-            window.renderBarDashboard();
-            
-            // Chạy chuỗi hành động: Hiện hình -> Bắn cung -> Biến mất lập tức để test
-            setTimeout(() => {
-                window.triggerLoveArcheryShot();
-            }, 100);
-        } else if (code !== null) {
-            alert("Mã PIN không chính xác!");
-        }
-    };
-
-    window.closeLoveArcherySecret = function() {
-        window.forceShowLoveArchery = false;
-        if (window.loveArcheryHideTimeout) {
-            clearTimeout(window.loveArcheryHideTimeout);
-        }
-        window.renderBarDashboard();
-    };
-
-    window.triggerLoveArcheryShot = function() {
-        if (typeof window.isLoveArcheryReversed === 'undefined') {
-            window.isLoveArcheryReversed = false;
-        }
-
-        // Vẽ lại giao diện để đảm bảo emoji và reversedClass đồng bộ
-        window.renderBarDashboard();
-
-        const zone = document.getElementById('love-animation-zone');
-        if (!zone) return;
-        
-        // 1. Hiện hình
-        zone.style.display = 'block';
-        
-        // 2. Kích hoạt hoạt ảnh bắn cung (Reset bằng reflow)
-        zone.classList.remove('is-shooting');
-        void zone.offsetWidth;
-        zone.classList.add('is-shooting');
-        
-        // 3. Biến mất sau khi hoạt ảnh bắn đường dài hoàn thành (4 giây)
-        if (window.loveArcheryHideTimeout) {
-            clearTimeout(window.loveArcheryHideTimeout);
-        }
-        
-        window.loveArcheryHideTimeout = setTimeout(() => {
-            zone.classList.remove('is-shooting');
-            zone.style.display = 'none';
-        }, 4000);
-    };
 
     // --- REPORT MODAL LOGIC ---
     let reportBarChartInstance = null;
