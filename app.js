@@ -449,24 +449,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Gán các sự kiện Chạm (Touch) dành cho Điện thoại / Máy tính bảng
+        // 1. touchstart: KHÔNG chặn cuộn mặc định, chỉ ghi nhận điểm chạm đầu và thiết lập bộ hẹn giờ 600ms
         container.addEventListener('touchstart', function(e) {
-            if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                startDragAttempt(touch.clientX, touch.clientY, touch.target);
-            }
-        }, { passive: true }); // Tối ưu hóa passive: true cho touchstart giúp cuộn trang siêu mượt
+            if (e.touches.length !== 1) return;
 
-        // Lắng nghe touchmove trực tiếp trên lưới bàn chỉ để phát hiện và hủy trạng thái chờ kéo khi vuốt cuộn tự nhiên
-        container.addEventListener('touchmove', function(e) {
-            if (draggedTableId && !isDragging) {
+            const touch = e.touches[0];
+            const targetEl = touch.target;
+            const tableItem = targetEl.closest('.table-item');
+            if (!tableItem || !tableItem.classList.contains('table-active')) return;
+
+            const tableId = parseInt(tableItem.id.replace('table-', ''));
+            if (isNaN(tableId)) return;
+
+            // Thiết lập tọa độ và bàn bắt đầu kéo
+            draggedTableId = tableId;
+            activeTargetEl = tableItem;
+            startX = touch.clientX;
+            startY = touch.clientY;
+            isDragging = false;
+
+            // Xóa bộ đếm cũ nếu có
+            if (dragStartTimer) {
+                clearTimeout(dragStartTimer);
+                dragStartTimer = null;
+            }
+
+            // Đặt đếm ngược 600ms để bắt đầu chế độ kéo bàn (Long Press)
+            dragStartTimer = setTimeout(() => {
+                initiateDrag(startX, startY);
+            }, 600);
+        }, { passive: true });
+
+        // 2. touchmove: Phân biệt cuộn trang tự nhiên và kéo bàn
+        // Đăng ký touchmove trên document với passive: false để có thể gọi e.preventDefault() khóa màn hình khi đang kéo bàn
+        document.addEventListener('touchmove', function(e) {
+            if (!draggedTableId || !activeTargetEl) return;
+
+            if (isDragging) {
+                // ĐANG KÉO BÀN: Khóa cuộn trang hoàn toàn và di chuyển helper theo tay
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    moveDrag(touch.clientX, touch.clientY, true);
+                }
+            } else {
+                // CHƯA KÉO BÀN (đang trong thời gian chờ 600ms): Nếu người dùng di chuyển tay quá 10px -> Hủy kéo để cuộn trang tự nhiên
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
                     const dx = touch.clientX - startX;
                     const dy = touch.clientY - startY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist > DRAG_THRESHOLD) {
-                        // Người dùng đang vuốt cuộn màn hình, hủy trạng thái nhấn giữ ngay lập tức!
+
+                    if (Math.abs(dy) > 10 || Math.abs(dx) > 10) {
+                        // Đây là hành động CUỘN TRANG -> Hủy bộ hẹn giờ kéo và giải phóng biến
                         if (dragStartTimer) {
                             clearTimeout(dragStartTimer);
                             dragStartTimer = null;
@@ -476,23 +510,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-        }, { passive: true }); // passive: true hoàn toàn ngăn chặn cảnh báo và chặn cuộn của trình duyệt
+        }, { passive: false });
 
-        document.addEventListener('touchmove', function(e) {
-            if (!isDragging) {
-                return; // THOÁT NGAY LẬP TỨC để trình duyệt tự động xử lý cuộn với hiệu năng tối đa
+        // 3. touchend / touchcancel: Nhả tay hoặc hủy chạm
+        const handleTouchEnd = function(e) {
+            if (dragStartTimer) {
+                clearTimeout(dragStartTimer);
+                dragStartTimer = null;
             }
-            
-            e.preventDefault(); // CHỈ ngăn cuộn trang khi thực sự đang thực hiện hành động kéo bàn
-            if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                moveDrag(touch.clientX, touch.clientY, true);
-            }
-        }, { passive: false }); // Chỉ dùng passive: false khi đang thực hiện kéo bàn để chặn cuộn màn hình
 
-        document.addEventListener('touchend', function(e) {
-            cancelDragAttempt();
-        });
+            if (isDragging) {
+                endDrag();
+            } else {
+                draggedTableId = null;
+                activeTargetEl = null;
+            }
+        };
+
+        document.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('touchcancel', handleTouchEnd);
     }
 
     // --- RECALCULATE STATS FROM HISTORY ---

@@ -626,7 +626,9 @@ body {
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     padding: 8px 0;
-    touch-action: pan-y;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    touch-action: auto;
 }
 
 .table-item {
@@ -641,7 +643,7 @@ body {
     border: 1px solid transparent;
     transition: all 0.2s;
     cursor: pointer;
-    touch-action: pan-y;
+    touch-action: auto;
 }
 
 .table-item:active {
