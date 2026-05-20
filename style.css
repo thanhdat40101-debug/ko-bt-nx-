@@ -673,13 +673,7 @@ body {
     letter-spacing: 0.2px;
 }
 
-.table-active::after {
-    content: "☕";
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 10px;
-}
+
 
 /* POS Cart Section */
 .cart-section {
@@ -1351,7 +1345,7 @@ input:checked + .clean-slider:before {
     border-radius: 2px;
     position: relative;
     color: #111;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Courier New', Consolas, monospace;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1709,10 +1703,18 @@ body.role-bar-active .bottom-nav {
     justify-content: space-between;
     align-items: center;
     background: white;
-    padding: 16px 20px;
+    padding: 8px 16px;
     border-radius: 16px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
     border: 1px solid #e2e8f0;
+}
+
+.bar-header .screen-title {
+    font-size: 20px;
+}
+
+.bar-header .screen-subtitle {
+    font-size: 12px;
 }
 
 .bar-grid {
@@ -2126,5 +2128,33 @@ body.dark-theme .bar-empty-title {
 body.dark-theme .bar-empty-desc {
     color: #b0b3b8 !important;
 }
+
+/* Giao diện hóa đơn trong modal thanh toán:
+   Khôi phục giao diện chung, không cuộn container lớn chứa QR và nút bấm */
+#bill-sheet-content {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+#qr-transfer-view {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Chỉ áp dụng cho khối danh sách chi tiết món ăn trên màn hình */
+.invoice-items-list { 
+    max-height: 180px !important; /* Giới hạn chiều cao vừa vặn để không đẩy form xuống */
+    overflow-y: auto !important;  /* Bật thanh cuộn dọc riêng cho mục này */
+    padding-right: 4px;
+}
+
+/* Bảo toàn chế độ in ấn */
+@media print {
+    .invoice-items-list {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}
+
 
 
