@@ -1563,33 +1563,48 @@ input:checked + .clean-slider:before {
 
 /* --- OPTIMIZED THERMAL PRINTING --- */
 @media print {
-    /* Ẩn tất cả mọi thành phần trên trang web */
-    body > *:not(#real-print-bill) {
-        display: none !important;
+    @page {
+        margin: 0;
     }
-    /* Chỉ hiển thị duy nhất tờ hóa đơn thực tế */
-    #real-print-bill {
-        display: block !important;
+    
+    body * {
+        visibility: hidden;
+    }
+
+    /* Chỉ hiện phần hóa đơn */
+    #bill-preview-box, #bill-preview-box * {
+        visibility: visible;
+    }
+
+    #bill-preview-box {
         position: absolute;
         left: 0;
         top: 0;
-        width: 100%;
-        max-width: 80mm; /* Khống chế chuẩn khổ giấy in nhiệt K80 */
-        margin: 0;
-        padding: 0;
-        background: white;
-        color: black;
-    }
-    /* Bắt buộc trình duyệt không được tự ý ngắt trang bừa bãi */
-    html, body {
-        height: auto !important;
-        overflow: visible !important;
+        width: 100% !important;
+        box-shadow: none !important;
         margin: 0 !important;
         padding: 0 !important;
     }
-    
+
+    .bill-inner {
+        padding: 10px 0 !important;
+        width: 100% !important;
+    }
+
+    /* Khổ giấy đặc thù */
     .thermal-bill.size-58 { width: 58mm !important; }
     .thermal-bill.size-80 { width: 80mm !important; }
+
+    /* Ẩn các thành phần không cần thiết của trình duyệt */
+    .config-preview-section {
+        background: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .section-label, .config-header, .bottom-nav, .sidebar, .btn-outline-test {
+        display: none !important;
+    }
 }
 
 /* --- ROLE BADGE & LOGOUT BUTTON --- */

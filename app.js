@@ -1020,9 +1020,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const storeDetails = getStoreDetailsFromLocalStorage();
 
         // 2. Đổ dữ liệu cấu hình vào Bill thực tế khi In
-        // Header (Tên Quán, Địa Chỉ, SĐT)
+        // Header
         const previewBrand = document.querySelector('#bill-preview-box .bill-brand');
-        if (previewBrand) previewBrand.innerText = storeDetails.shopName || 'TIỆM GOAT POS';
+        if (previewBrand) {
+            previewBrand.innerText = storeDetails.shopName;
+        }
 
         const previewAddress = document.getElementById('bill-print-address');
         if (previewAddress) {
@@ -1042,22 +1044,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 previewPhone.style.display = 'none';
             }
-        }
-
-        // CẬP NHẬT LOGIC ẨN/HIỆN NGHIÊM NGẶT THEO NÚT GẠT (CÀI ĐẶT)
-        // 1. Hiển thị Logo
-        const previewLogo = document.getElementById('v-logo');
-        if (previewLogo) previewLogo.style.display = printSettings.showLogo ? 'block' : 'none';
-
-        // Tiêu đề Hóa Đơn (Bắt buộc theo Form)
-        const vHeader = document.getElementById('v-header');
-        if (vHeader) {
-            vHeader.innerText = 'HÓA ĐƠN THANH TOÁN';
-            vHeader.style.display = 'block';
-            vHeader.style.textAlign = 'center';
-            vHeader.style.fontWeight = 'bold';
-            vHeader.style.fontSize = '14px';
-            vHeader.style.margin = '10px 0';
         }
 
         // Order Info Box (Order ID & Table ID)
@@ -1082,60 +1068,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const previewTotal = document.querySelector('#bill-preview-box .bill-total span:last-child');
         if (previewTotal) previewTotal.innerText = orderData.total.toLocaleString();
         
-        // 2. Hiển thị Thuế
-        const previewTax = document.getElementById('v-tax');
-        if (previewTax) previewTax.style.display = printSettings.showTax ? 'block' : 'none';
-
-        // 3. Hiển thị QR Thanh toán
-        const previewQr = document.getElementById('v-qr');
-        if (previewQr) {
-            if (printSettings.showQR) {
-                previewQr.style.display = 'block';
-                const totalForQr = orderData.total;
-                const bankAcc = storeDetails.bankAccount || '';
-                const bankId = storeDetails.bankId || '';
-                const qrImg = previewQr.querySelector('img');
-                if (qrImg) {
-                    if (bankAcc && bankId) {
-                        qrImg.src = `https://img.vietqr.io/image/${bankId}-${bankAcc}-compact2.png?amount=${totalForQr}&addInfo=${orderId}`;
-                    } else {
-                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ThanhToan_${orderId}`;
-                    }
-                }
-            } else {
-                previewQr.style.display = 'none';
-            }
-        }
-
-        // 4. Hiển thị WiFi info
+        // WiFi info
         const previewWifi = document.querySelector('#bill-preview-box #v-wifi');
         if (previewWifi) {
-            if (printSettings.showWiFi) {
-                previewWifi.innerHTML = `<i class="fa-solid fa-wifi"></i> WiFi: ${storeDetails.wifiName || ''} / MK: ${storeDetails.wifiPass || ''}`;
-                previewWifi.style.display = 'block';
-            } else {
-                previewWifi.style.display = 'none';
-            }
+            previewWifi.innerHTML = `<i class="fa-solid fa-wifi"></i> WiFi: ${storeDetails.wifiName} / MK: ${storeDetails.wifiPass}`;
         }
 
-        // 5. Hiển thị Lời chào (Greeting / Note)
-        const vFooter = document.getElementById('v-footer');
-        if (vFooter) vFooter.style.display = 'none'; // Tắt v-footer thừa để tuân thủ thiết kế
-
+        // Greeting / Note
         const previewNote = document.querySelector('#bill-preview-box #v-note');
         if (previewNote) {
-            if (printSettings.showNote) {
-                previewNote.innerText = printSettings.footerText || storeDetails.shopGreeting || 'Cảm ơn & Hẹn gặp lại!';
-                previewNote.style.display = 'block';
-            } else {
-                previewNote.style.display = 'none';
-            }
+            previewNote.innerText = storeDetails.shopGreeting;
         }
 
         // Real Date/Time with Seconds
         const previewDate = document.querySelector('#bill-preview-box .bill-date');
         if (previewDate) {
-            let dateStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+            let dateStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
             previewDate.innerText = dateStr.replace(',', ' -');
         }
 
@@ -1145,22 +1093,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closeAllModals();
 
         // 3. Kích hoạt Lệnh In ngay lập tức
-        const previewBox = document.getElementById('bill-preview-box');
-        if (previewBox) {
-            let realPrintBill = document.getElementById('real-print-bill');
-            if (!realPrintBill) {
-                realPrintBill = document.createElement('div');
-                realPrintBill.id = 'real-print-bill';
-                document.body.appendChild(realPrintBill);
-            }
-            realPrintBill.innerHTML = previewBox.innerHTML;
-            realPrintBill.className = previewBox.className;
-        }
-
         setTimeout(() => {
             window.print();
-            const rp = document.getElementById('real-print-bill');
-            if (rp) rp.remove();
         }, 150);
 
         try {
@@ -2309,24 +2243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (previewTableId) previewTableId.innerText = 'Bàn Test';
 
         alert("🖨️ Đang in thử hóa đơn khổ " + printSettings.paperSize + "mm ra máy in...");
-        
-        const previewBox = document.getElementById('bill-preview-box');
-        if (previewBox) {
-            let realPrintBill = document.getElementById('real-print-bill');
-            if (!realPrintBill) {
-                realPrintBill = document.createElement('div');
-                realPrintBill.id = 'real-print-bill';
-                document.body.appendChild(realPrintBill);
-            }
-            realPrintBill.innerHTML = previewBox.innerHTML;
-            realPrintBill.className = previewBox.className;
-        }
-        
-        setTimeout(() => {
-            window.print();
-            const rp = document.getElementById('real-print-bill');
-            if (rp) rp.remove();
-        }, 150);
+        window.print();
     };
 
     // --- BAR/KITCHEN REALTIME DASHBOARD LOGIC ---
