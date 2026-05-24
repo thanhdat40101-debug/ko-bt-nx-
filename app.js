@@ -689,13 +689,13 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePinDots();
         } else if (role === 'bar') {
             if (pinField) pinField.style.display = 'flex';
-            if (pinLabel) pinLabel.innerText = 'MÃ PIN QUẦY BAR (5555)';
+            if (pinLabel) pinLabel.innerText = 'MÃ PIN QUẦY BAR';
             if (submitBtn) submitBtn.innerText = 'Đăng nhập Quầy Bar ➔';
             enteredPin = '';
             updatePinDots();
         } else {
             if (pinField) pinField.style.display = 'flex';
-            if (pinLabel) pinLabel.innerText = 'MÃ PIN ADMIN (6666)';
+            if (pinLabel) pinLabel.innerText = 'MÃ PIN ADMIN';
             if (submitBtn) submitBtn.innerText = 'Đăng nhập Admin ➔';
             enteredPin = '';
             updatePinDots();
@@ -1020,11 +1020,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const storeDetails = getStoreDetailsFromLocalStorage();
 
         // 2. Đổ dữ liệu cấu hình vào Bill thực tế khi In
-        // Header
+        // Header (Tên Quán, Địa Chỉ, SĐT)
         const previewBrand = document.querySelector('#bill-preview-box .bill-brand');
-        if (previewBrand) {
-            previewBrand.innerText = storeDetails.shopName;
-        }
+        if (previewBrand) previewBrand.innerText = storeDetails.shopName || 'TIỆM GOAT POS';
 
         const previewAddress = document.getElementById('bill-print-address');
         if (previewAddress) {
@@ -1044,6 +1042,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 previewPhone.style.display = 'none';
             }
+        }
+
+        // CẬP NHẬT LOGIC ẨN/HIỆN NGHIÊM NGẶT THEO NÚT GẠT (CÀI ĐẶT)
+        // 1. Hiển thị Logo
+        const previewLogo = document.getElementById('v-logo');
+        if (previewLogo) previewLogo.style.display = printSettings.showLogo ? 'block' : 'none';
+
+        // Tiêu đề Hóa Đơn (Bắt buộc theo Form)
+        const vHeader = document.getElementById('v-header');
+        if (vHeader) {
+            vHeader.innerText = 'HÓA ĐƠN THANH TOÁN';
+            vHeader.style.display = 'block';
+            vHeader.style.textAlign = 'center';
+            vHeader.style.fontWeight = 'bold';
+            vHeader.style.fontSize = '14px';
+            vHeader.style.margin = '10px 0';
         }
 
         // Order Info Box (Order ID & Table ID)
@@ -1068,22 +1082,60 @@ document.addEventListener('DOMContentLoaded', () => {
         const previewTotal = document.querySelector('#bill-preview-box .bill-total span:last-child');
         if (previewTotal) previewTotal.innerText = orderData.total.toLocaleString();
         
-        // WiFi info
-        const previewWifi = document.querySelector('#bill-preview-box #v-wifi');
-        if (previewWifi) {
-            previewWifi.innerHTML = `<i class="fa-solid fa-wifi"></i> WiFi: ${storeDetails.wifiName} / MK: ${storeDetails.wifiPass}`;
+        // 2. Hiển thị Thuế
+        const previewTax = document.getElementById('v-tax');
+        if (previewTax) previewTax.style.display = printSettings.showTax ? 'block' : 'none';
+
+        // 3. Hiển thị QR Thanh toán
+        const previewQr = document.getElementById('v-qr');
+        if (previewQr) {
+            if (printSettings.showQR) {
+                previewQr.style.display = 'block';
+                const totalForQr = orderData.total;
+                const bankAcc = storeDetails.bankAccount || '';
+                const bankId = storeDetails.bankId || '';
+                const qrImg = previewQr.querySelector('img');
+                if (qrImg) {
+                    if (bankAcc && bankId) {
+                        qrImg.src = `https://img.vietqr.io/image/${bankId}-${bankAcc}-compact2.png?amount=${totalForQr}&addInfo=${orderId}`;
+                    } else {
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ThanhToan_${orderId}`;
+                    }
+                }
+            } else {
+                previewQr.style.display = 'none';
+            }
         }
 
-        // Greeting / Note
+        // 4. Hiển thị WiFi info
+        const previewWifi = document.querySelector('#bill-preview-box #v-wifi');
+        if (previewWifi) {
+            if (printSettings.showWiFi) {
+                previewWifi.innerHTML = `<i class="fa-solid fa-wifi"></i> WiFi: ${storeDetails.wifiName || ''} / MK: ${storeDetails.wifiPass || ''}`;
+                previewWifi.style.display = 'block';
+            } else {
+                previewWifi.style.display = 'none';
+            }
+        }
+
+        // 5. Hiển thị Lời chào (Greeting / Note)
+        const vFooter = document.getElementById('v-footer');
+        if (vFooter) vFooter.style.display = 'none'; // Tắt v-footer thừa để tuân thủ thiết kế
+
         const previewNote = document.querySelector('#bill-preview-box #v-note');
         if (previewNote) {
-            previewNote.innerText = storeDetails.shopGreeting;
+            if (printSettings.showNote) {
+                previewNote.innerText = printSettings.footerText || storeDetails.shopGreeting || 'Cảm ơn & Hẹn gặp lại!';
+                previewNote.style.display = 'block';
+            } else {
+                previewNote.style.display = 'none';
+            }
         }
 
         // Real Date/Time with Seconds
         const previewDate = document.querySelector('#bill-preview-box .bill-date');
         if (previewDate) {
-            let dateStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+            let dateStr = now.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
             previewDate.innerText = dateStr.replace(',', ' -');
         }
 
@@ -1093,8 +1145,22 @@ document.addEventListener('DOMContentLoaded', () => {
         window.closeAllModals();
 
         // 3. Kích hoạt Lệnh In ngay lập tức
+        const previewBox = document.getElementById('bill-preview-box');
+        if (previewBox) {
+            let realPrintBill = document.getElementById('real-print-bill');
+            if (!realPrintBill) {
+                realPrintBill = document.createElement('div');
+                realPrintBill.id = 'real-print-bill';
+                document.body.appendChild(realPrintBill);
+            }
+            realPrintBill.innerHTML = previewBox.innerHTML;
+            realPrintBill.className = previewBox.className;
+        }
+
         setTimeout(() => {
             window.print();
+            const rp = document.getElementById('real-print-bill');
+            if (rp) rp.remove();
         }, 150);
 
         try {
@@ -1292,8 +1358,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const checkInHtml = checkInStr ? `<div class="table-checkin-time">${checkInStr}</div>` : '';
                 
+                let isAllDone = false;
+                if (hasOrder.items && hasOrder.items.length > 0) {
+                    isAllDone = hasOrder.items.every(item => item.status === 'completed');
+                }
+                const activeClass = isAllDone ? 'table-item table-active table-all-done' : 'table-item table-active';
+                
                 html += `
-                    <div id="table-${i}" class="table-item table-active" onclick="viewTableBill(${i})">
+                    <div id="table-${i}" class="${activeClass}" onclick="viewTableBill(${i})">
                         <span style="font-weight: 700;">${getTableName(i)}</span>
                         ${checkInHtml}
                     </div>
@@ -2237,7 +2309,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (previewTableId) previewTableId.innerText = 'Bàn Test';
 
         alert("🖨️ Đang in thử hóa đơn khổ " + printSettings.paperSize + "mm ra máy in...");
-        window.print();
+        
+        const previewBox = document.getElementById('bill-preview-box');
+        if (previewBox) {
+            let realPrintBill = document.getElementById('real-print-bill');
+            if (!realPrintBill) {
+                realPrintBill = document.createElement('div');
+                realPrintBill.id = 'real-print-bill';
+                document.body.appendChild(realPrintBill);
+            }
+            realPrintBill.innerHTML = previewBox.innerHTML;
+            realPrintBill.className = previewBox.className;
+        }
+        
+        setTimeout(() => {
+            window.print();
+            const rp = document.getElementById('real-print-bill');
+            if (rp) rp.remove();
+        }, 150);
     };
 
     // --- BAR/KITCHEN REALTIME DASHBOARD LOGIC ---
@@ -2616,7 +2705,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             autoSkip: false,
                             maxRotation: 0,
                             minRotation: 0,
-                            font: { family: 'Inter', size: 8, weight: '600' },
+                            font: { family: 'Inter', size: 10, weight: '600' },
                             color: '#64748b'
                         }
                     },
@@ -2808,18 +2897,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- KITCHEN NOTIFICATION SOUND & TIMER HELPERS ---
     function playNotificationSound() {
         try {
-            // Sử dụng link âm thanh chuông báo chuẩn chất lượng từ CDN
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav');
-            audio.volume = 0.5;
-            audio.play();
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+
+            // Ting 1
+            const osc1 = ctx.createOscillator();
+            const gainNode1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(880, ctx.currentTime);
+            gainNode1.gain.setValueAtTime(0, ctx.currentTime);
+            gainNode1.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.05);
+            gainNode1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc1.connect(gainNode1);
+            gainNode1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.5);
+
+            // Ting 2
+            const osc2 = ctx.createOscillator();
+            const gainNode2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1108.73, ctx.currentTime + 0.15);
+            gainNode2.gain.setValueAtTime(0, ctx.currentTime + 0.15);
+            gainNode2.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.2);
+            gainNode2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+            osc2.connect(gainNode2);
+            gainNode2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.8);
         } catch (err) {
             console.error("Không thể phát âm thanh thông báo:", err);
         }
     }
 
+    let previousPendingCount = 0;
+
     function checkNewOrders(currentTablesData) {
-        const currentActiveIds = [];
-        let hasNewOrder = false;
+        let currentPendingCount = 0;
 
         Object.keys(currentTablesData).forEach(tableId => {
             const order = currentTablesData[tableId];
@@ -2828,34 +2943,24 @@ document.addEventListener('DOMContentLoaded', () => {
             order.items.forEach(it => {
                 const status = it.status || 'pending';
                 if (status === 'pending' || status === 'preparing') {
-                    // Tạo ID định danh duy nhất cho từng món chế biến
-                    const orderedAtVal = it.orderedAt?.seconds 
-                        ? it.orderedAt.seconds * 1000 
-                        : (it.orderedAt instanceof Date ? it.orderedAt.getTime() : 0);
-                    
-                    const uniqueId = `${tableId}_${it.name}_${orderedAtVal}`;
-                    currentActiveIds.push(uniqueId);
-
-                    if (!isFirstLoad && !knownActiveItems.has(uniqueId)) {
-                        hasNewOrder = true;
-                    }
+                    currentPendingCount++;
                 }
             });
         });
 
-        // Cập nhật bộ nhớ đệm active items
-        knownActiveItems = new Set(currentActiveIds);
-
         // Lần đầu tải trang chỉ đồng bộ bộ nhớ chứ không kêu chuông
         if (isFirstLoad) {
+            previousPendingCount = currentPendingCount;
             isFirstLoad = false;
             return;
         }
 
-        if (hasNewOrder) {
+        if (currentPendingCount > previousPendingCount) {
             console.log("🔔 Phát hiện món mới được gọi thêm! Đang phát âm thanh báo bếp...");
             playNotificationSound();
         }
+
+        previousPendingCount = currentPendingCount;
     }
 
     // Thiết lập bộ đếm thời gian chế biến chạy giây/phút liên tục không giật lắc/flicker

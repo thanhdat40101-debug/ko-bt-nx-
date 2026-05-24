@@ -665,6 +665,13 @@ body {
     box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
 }
 
+.table-all-done {
+    background-color: #D1FAE5 !important;
+    border-color: #10B981 !important;
+    color: #047857 !important;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15) !important;
+}
+
 .table-checkin-time {
     font-size: 10.5px !important;
     font-weight: 500 !important;
@@ -1556,48 +1563,33 @@ input:checked + .clean-slider:before {
 
 /* --- OPTIMIZED THERMAL PRINTING --- */
 @media print {
-    @page {
-        margin: 0;
+    /* Ẩn tất cả mọi thành phần trên trang web */
+    body > *:not(#real-print-bill) {
+        display: none !important;
     }
-    
-    body * {
-        visibility: hidden;
-    }
-
-    /* Chỉ hiện phần hóa đơn */
-    #bill-preview-box, #bill-preview-box * {
-        visibility: visible;
-    }
-
-    #bill-preview-box {
+    /* Chỉ hiển thị duy nhất tờ hóa đơn thực tế */
+    #real-print-bill {
+        display: block !important;
         position: absolute;
         left: 0;
         top: 0;
-        width: 100% !important;
-        box-shadow: none !important;
+        width: 100%;
+        max-width: 80mm; /* Khống chế chuẩn khổ giấy in nhiệt K80 */
+        margin: 0;
+        padding: 0;
+        background: white;
+        color: black;
+    }
+    /* Bắt buộc trình duyệt không được tự ý ngắt trang bừa bãi */
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
         margin: 0 !important;
         padding: 0 !important;
     }
-
-    .bill-inner {
-        padding: 10px 0 !important;
-        width: 100% !important;
-    }
-
-    /* Khổ giấy đặc thù */
+    
     .thermal-bill.size-58 { width: 58mm !important; }
     .thermal-bill.size-80 { width: 80mm !important; }
-
-    /* Ẩn các thành phần không cần thiết của trình duyệt */
-    .config-preview-section {
-        background: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .section-label, .config-header, .bottom-nav, .sidebar, .btn-outline-test {
-        display: none !important;
-    }
 }
 
 /* --- ROLE BADGE & LOGOUT BUTTON --- */
