@@ -606,6 +606,25 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelDragAttempt();
         });
 
+        // Gán các sự kiện Cảm ứng (Touch)
+        container.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) return; // Chỉ xử lý 1 ngón tay
+            startDragAttempt(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                e.preventDefault(); // Chỉ chặn trình duyệt cuộn khi đã nhấn giữ đủ lâu (thực sự kéo)
+            }
+            if (draggedTableId) {
+                moveDrag(e.touches[0].clientX, e.touches[0].clientY, true);
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(e) {
+            cancelDragAttempt();
+        });
+
     }
 
     // --- RECALCULATE STATS FROM HISTORY ---

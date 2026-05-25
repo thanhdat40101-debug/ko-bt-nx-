@@ -2165,3 +2165,26 @@ body.dark-theme .bar-empty-desc {
 
 
 
+
+/* --- B? SUNG LAYOUT RESPONSIVE CHO IPAD/PC (An toàn) --- */
+@media (min-width: 768px) {
+    /* 1. Lo?i b? gi?i h?n max-width dang ép khung app b? co nh? ? gi?a */
+    .app-container, body, .top-header, .bottom-nav, .floating-cart-bar { 
+        max-width: 100% !important; 
+        width: 100% !important;
+    }
+    
+    /* 2. Ép các lu?i danh sách món an và so d? bàn t? d?ng dãn ra full màn hình */
+    .products-grid, #table-grid-container, .table-grid-small, .select-table-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+        gap: 16px !important;
+    }
+    
+    /* 3. Gi? các modal popup can gi?a màn hình PC/iPad cho d?p, không b? dãn b?p dí ra */
+    .bottom-sheet {
+        max-width: 600px !important;
+    }
+    .bottom-sheet.full-screen {
+        max-width: 800px !important;
+    }
+}
