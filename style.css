@@ -26,6 +26,8 @@ body {
     display: flex;
     justify-content: center;
     min-height: 100vh;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Mobile-Only Wrapper (Desktop Simulation) */
