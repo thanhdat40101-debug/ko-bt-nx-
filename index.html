@@ -539,16 +539,14 @@
 
             <!-- Bar Screen (Kitchen Dashboard) -->
             <div class="bar-screen screen" id="bar-section" style="display: none;">
-                <div class="bar-header">
-                    <div class="bar-header-left">
-                        <h2 class="screen-title" style="margin-bottom: 2px;">Danh Sách Pha Chế</h2>
-                        <p class="screen-subtitle" style="margin-bottom: 0;">Màn hình Quầy Bar thời gian thực</p>
+                <div class="bar-list-header">
+                    <div class="bar-title-group">
+                        <h3 class="main-title" style="margin: 0;">Danh Sách Pha Chế</h3>
+                        <span class="sub-title">Màn hình Quầy Bar thời gian thực</span>
                     </div>
-                    <div class="bar-header-actions">
-                        <div class="bar-filter-tabs" style="display: flex; gap: 8px; background: #e2e8f0; padding: 4px; border-radius: 10px; align-items: center;">
-                            <button id="bar-tab-pending" class="bar-filter-btn active" onclick="switchBarTab('pending')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: white; color: #0284c7;">Đang chờ</button>
-                            <button id="bar-tab-history" class="bar-filter-btn" onclick="switchBarTab('history')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569;">Lịch sử xong</button>
-                        </div>
+                    <div class="bar-status-filters">
+                        <button id="bar-tab-pending" class="bar-filter-btn active" onclick="switchBarTab('pending')">Đang chờ</button>
+                        <button id="bar-tab-history" class="bar-filter-btn" onclick="switchBarTab('history')">Lịch sử xong</button>
                         <button class="bar-logout-btn" onclick="logout()" title="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i></button>
                     </div>
                 </div>

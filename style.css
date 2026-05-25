@@ -92,6 +92,23 @@ body {
     position: relative;
 }
 
+/* Note Input in Cart */
+.item-note-input {
+    width: 90%;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+    margin-top: 4px;
+    color: #555;
+    background-color: #f9f9f9;
+}
+.item-note-input:focus {
+    border-color: #007bff;
+    background-color: #fff;
+    outline: none;
+}
+
 /* Main Content Area */
 .main-content {
     flex: 1;
@@ -2009,14 +2026,7 @@ body.dark-theme .bar-filter-tabs {
     background: #242526 !important;
 }
 
-body.dark-theme .bar-filter-btn {
-    color: #b0b3b8 !important;
-}
 
-body.dark-theme .bar-filter-btn.active {
-    background: #0284c7 !important;
-    color: #ffffff !important;
-}
 
 body.dark-theme .bar-order-card {
     background: #18191a !important;
@@ -2196,16 +2206,57 @@ body.dark-theme .bar-empty-desc {
 .bar-screen {
     position: relative;
 }
-.bar-header-actions {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 15px;
+/* Thanh đầu/tiêu đề của riêng khung danh sách pha chế bên trái */
+.bar-list-header {
+    display: flex;
+    justify-content: space-between; /* Đẩy chữ sang trái, cụm nút sang phải */
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #2b2b2b;
+    border-bottom: 1px solid #3d3d3d;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    margin-bottom: 16px;
+}
+
+/* Nhóm tiêu đề góc trái */
+.bar-title-group {
+    display: flex;
+    flex-direction: column; /* Xếp dòng chữ lớn trên dòng chữ nhỏ */
+    gap: 2px;
+}
+.bar-title-group .main-title {
+    font-size: 16px !important;
+    font-weight: bold !important;
+    color: #ffffff !important;
+}
+.bar-title-group .sub-title {
+    font-size: 12px !important;
+    color: #aaaaaa !important;
+}
+
+/* Khung chứa nhóm nút chức năng */
+.bar-status-filters {
     display: flex;
     align-items: center;
-    gap: 12px;
-    z-index: 100;
+    gap: 8px; /* Khoảng cách ngang cách đều giữa các nút */
 }
+
+/* Đồng bộ style cho cả 2 nút */
+.bar-status-filters button {
+    background-color: #3a3a3a !important; /* Màu xám tối sang trọng */
+    color: #ffffff !important;
+    border: 1px solid #555555 !important;
+    padding: 5px 12px !important;
+    border-radius: 6px !important; /* Bo tròn góc nhẹ để bớt vuông thô */
+    font-size: 13px !important;
+    cursor: pointer;
+    height: 32px;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+
+/* Biểu tượng đăng xuất trắng tinh tế, không viền, không nền */
 .bar-logout-btn {
     background: transparent !important;
     border: none !important;
@@ -2213,13 +2264,14 @@ body.dark-theme .bar-empty-desc {
     color: #ffffff !important;
     font-size: 16px !important;
     cursor: pointer;
-    display: flex;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px !important; /* Bo góc đồng bộ khi hover/active */
     padding: 0 !important;
     margin: 0 !important;
-    width: auto !important;
-    height: auto !important;
     transition: all 0.2s;
 }
 .bar-logout-btn:hover {

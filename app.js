@@ -905,7 +905,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- POS LOGIC ---
     window.addToCart = function(itemName, price) {
-        const existingItem = currentCart.find(item => item.name === itemName);
+        // Chỉ gộp vào món chưa có ghi chú
+        const existingItem = currentCart.find(item => item.name === itemName && !item.note);
         if (existingItem) {
             existingItem.qty += 1;
         } else {
@@ -943,6 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="qty-num">${item.qty}</span>
                             <button class="qty-btn inc" onclick="increaseQuantity(${index})">+</button>
                         </div>
+                        <input type="text" class="item-note-input" placeholder="Ghi chú (ít đường, không đá...)..." value="${item.note || ''}" onchange="updateCartItemNote(${index}, this.value)" oninput="updateCartItemNote(${index}, this.value)">
                     </div>
                     <span class="cart-item-price">${(itemTotal).toLocaleString()} đ</span>
                 </div>
@@ -952,6 +954,12 @@ document.addEventListener('DOMContentLoaded', () => {
         bottomCount.innerText = `${totalItems} món`;
         bottomTotal.innerText = `${totalAmount.toLocaleString()} đ`;
     }
+
+    window.updateCartItemNote = function(index, value) {
+        if (currentCart[index]) {
+            currentCart[index].note = value;
+        }
+    };
 
     window.increaseQuantity = (index) => { if (currentCart[index]) { currentCart[index].qty += 1; renderCart(); } };
     window.decreaseQuantity = (index) => {
@@ -975,8 +983,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Gộp thêm món trực tiếp trên Firestore
             finalItems = JSON.parse(JSON.stringify(tableOrders[num].items));
             currentCart.forEach(newItem => {
-                // Chỉ gộp với các món cùng tên và cùng có trạng thái 'pending' để không phá hỏng trạng thái làm món
-                const sameItem = finalItems.find(i => i.name === newItem.name && (i.status || 'pending') === 'pending');
+                // Chỉ gộp với các món cùng tên, cùng ghi chú và cùng có trạng thái 'pending' để không phá hỏng trạng thái làm món
+                const sameItem = finalItems.find(i => i.name === newItem.name && (i.status || 'pending') === 'pending' && (i.note || '') === (newItem.note || ''));
                 if (sameItem) {
                     sameItem.qty += newItem.qty;
                 } else {
@@ -1090,7 +1098,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (previewItemsContainer) {
             previewItemsContainer.innerHTML = orderData.items.map(it => `
                 <div class="b-row">
-                    <span>${it.name} x${it.qty}</span>
+                    <span>${it.name} x${it.qty}${it.note ? `<br><small style="font-size: 11px; color: #555;">- Ghi chú: ${it.note}</small>` : ''}</span>
                     <span>${(it.price * it.qty).toLocaleString()}</span>
                 </div>
             `).join('');
@@ -1689,6 +1697,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="cart-item-row" style="align-items: center;">
                     <div class="cart-item-info">
                         <span style="font-weight: 700; color: #1e293b;">${it.name}</span>
+                        ${it.note ? `<div style="font-size: 11px; color: #64748b; font-style: italic; margin-top: 2px;">Ghi chú: ${it.note}</div>` : ''}
                         <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                             <span style="font-size: 12px; color: #64748b; font-weight: 600;">x${it.qty}</span>
                             <span class="waiter-status-badge ${badgeClass}">${badgeLabel}</span>
@@ -2339,7 +2348,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="bar-card-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     <span class="bar-table-title">${getTableName(tableId).toUpperCase()}</span>
-                                    <button class="bar-action-btn done" onclick="completeAllItemsForTable(${tableId})" style="padding: 3px 6px; font-size: 10px; border-radius: 6px; gap: 3px; display: inline-flex; align-items: center;">
+                                    <button class="bar-action-btn done" onclick="completeAllItemsForTable(${tableId}, this)" style="padding: 3px 6px; font-size: 10px; border-radius: 6px; gap: 3px; display: inline-flex; align-items: center;">
                                         <i class="fa-solid fa-check-double"></i> Xong hết
                                     </button>
                                 </div>
@@ -2360,11 +2369,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     return `
                                         <div class="bar-item-row">
                                             <span class="bar-item-name">${it.name}</span>
+                                            ${it.note ? `<div class="bar-item-note" style="font-size: 12px; color: #ef4444; font-weight: 600; margin-bottom: 6px;">📝 ${it.note}</div>` : ''}
                                             <div class="bar-item-details" style="gap: 12px;">
                                                 <span class="bar-item-qty" style="margin: 0;">SL: ${it.qty}</span>
                                                 <span class="bar-item-timer" data-ordered-at="${orderedAtMs}" data-status="${status}">⏳ Đang chờ...</span>
                                                 <div style="margin-left: auto; display: flex; align-items: center;">
-                                                    <button class="bar-action-btn done" onclick="updateItemBarStatus(${tableId}, '${it.name}', '${status}', 'completed')">
+                                                    <button class="bar-action-btn done" onclick="updateItemBarStatus(${tableId}, '${it.name}', '${(it.note || '').replace(/'/g, "\\'")}', '${status}', 'completed', this)">
                                                         <i class="fa-solid fa-check"></i> Xong
                                                     </button>
                                                 </div>
@@ -2496,14 +2506,30 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.innerHTML = html;
     };
 
-    window.updateItemBarStatus = async function(tableId, itemName, currentStatus, newStatus) {
+    window.updateItemBarStatus = async function(tableId, itemName, itemNote, currentStatus, newStatus, btnElement) {
+        // Optimistic UI Update: thay đổi giao diện ngay lập tức để tránh giật hình
+        if (btnElement) {
+            const itemRow = btnElement.closest('.bar-item-row');
+            if (itemRow) {
+                itemRow.style.opacity = '0.5';
+                itemRow.style.transition = 'opacity 0.2s';
+                const timerSpan = itemRow.querySelector('.bar-item-timer');
+                if (timerSpan) {
+                    timerSpan.innerHTML = '✅ Xong';
+                    timerSpan.style.color = '#10b981';
+                }
+                btnElement.disabled = true;
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Đã xong';
+            }
+        }
+
         const order = tableOrders[tableId];
         if (!order || !order.items) return;
         
         // Cập nhật trạng thái của món được bấm chọn
         const updatedItems = order.items.map(it => {
             const itStatus = it.status || 'pending';
-            if (it.name === itemName && itStatus === currentStatus) {
+            if (it.name === itemName && (it.note || '') === itemNote && itStatus === currentStatus) {
                 return { 
                     ...it, 
                     status: newStatus,
@@ -2525,7 +2551,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.completeAllItemsForTable = async function(tableId) {
+    window.completeAllItemsForTable = async function(tableId, btnElement) {
+        // Optimistic UI Update: thay đổi giao diện ngay lập tức để tránh giật hình
+        if (btnElement) {
+            const card = btnElement.closest('.bar-order-card');
+            if (card) {
+                card.style.opacity = '0.5';
+                card.style.transition = 'opacity 0.2s';
+                const timers = card.querySelectorAll('.bar-item-timer');
+                timers.forEach(t => {
+                    t.innerHTML = '✅ Xong';
+                    t.style.color = '#10b981';
+                });
+                btnElement.disabled = true;
+                btnElement.innerHTML = 'Đã xong';
+            }
+        }
+
         const order = tableOrders[tableId];
         if (!order || !order.items) return;
         
