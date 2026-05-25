@@ -2287,3 +2287,122 @@ html, body, button, .table-item, .menu-item {
     -webkit-tap-highlight-color: transparent !important;
 }
 
+/* --- FOCUS MODE ANIMATED BACKGROUND THEMES --- */
+.login-overlay.focus-active {
+    overflow: hidden;
+    transition: background 2s ease-in-out, filter 2s ease-in-out;
+}
+
+/* Theme 1: Stars */
+.login-overlay.theme-stars {
+    background: linear-gradient(to bottom, #050514 0%, #0c1a42 40%, #1e3a8a 100%) !important;
+}
+
+/* Theme 2: Clouds */
+.login-overlay.theme-clouds {
+    background: linear-gradient(to bottom, #1e293b 0%, #334155 50%, #475569 100%) !important;
+}
+
+/* Theme 3: Nebula */
+.login-overlay.theme-nebula {
+    background: linear-gradient(45deg, #2e0854 0%, #4a00e0 50%, #8e2de2 100%) !important;
+    background-size: 200% 200%;
+    animation: nebulaGradient 15s ease infinite;
+}
+
+@keyframes nebulaGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Theme 4: Aurora */
+.login-overlay.theme-aurora {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important;
+    background-size: 200% 200%;
+    animation: auroraGradient 20s ease infinite alternate;
+}
+
+@keyframes auroraGradient {
+    0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+    100% { background-position: 100% 50%; filter: hue-rotate(45deg); }
+}
+
+.clouds-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200vw;
+    height: 100%;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 60%);
+    background-size: 200px 200px;
+    animation: driftClouds 120s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.star {
+    position: absolute;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8);
+    animation: twinkle var(--twinkle-dur) ease-in-out infinite alternate, driftStar var(--drift-dur) linear infinite;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 2s ease-in-out;
+}
+
+.clouds-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200vw;
+    height: 100%;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 60%);
+    background-size: 200px 200px;
+    animation: driftClouds 120s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 2s ease-in-out;
+}
+
+/* Control visibility based on themes */
+.login-overlay.theme-stars .star, .login-overlay.theme-aurora .star {
+    opacity: 1;
+}
+.login-overlay.theme-clouds .star, .login-overlay.theme-nebula .star {
+    opacity: 0.1;
+}
+
+.login-overlay.theme-clouds .clouds-bg {
+    opacity: 0.4;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 50%);
+}
+.login-overlay.theme-nebula .clouds-bg {
+    opacity: 0.2;
+    background-image: radial-gradient(circle at center, rgba(255,100,255,0.1) 0%, transparent 60%);
+}
+.login-overlay.theme-stars .clouds-bg, .login-overlay.theme-aurora .clouds-bg {
+    opacity: 0.05;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes driftStar {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50vw); }
+}
+
+@keyframes driftClouds {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100vw); }
+}
+
+/* Ensure login container stays above stars */
+.login-container {
+    position: relative;
+    z-index: 10;
+}

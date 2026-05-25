@@ -2997,6 +2997,117 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }, 1000);
+    // --- FOCUS MODE (Countdown) ---
+    const EXAM_START_DATE = new Date("2026-06-11T07:30:00").getTime();
+    const EXAM_END_DATE = new Date("2026-06-13T17:00:00").getTime();
+    const focusCountdownContainer = document.getElementById('focus-countdown-container');
+    const focusTitleText = document.getElementById('focus-title-text');
+    const focusTimerText = document.getElementById('focus-timer-text');
+    const focusSloganText = document.getElementById('focus-slogan-text');
+    const focusSuccessMsg = document.getElementById('focus-success-msg');
+    const loginFormDiv = document.querySelector('.login-form');
+    const roleSelectorDiv = document.querySelector('.role-selector');
+
+    const focusQuotes = [
+        "CÁ CHÉP HÓA RỒNG - TẬP TRUNG ÔN THI, KHÔNG SỬA CODE!",
+        "12 NĂM ĐÈN SÁCH - QUYẾT TÂM ĐẬU NGUYỆN VỌNG 1!",
+        "BÚT SA GÀ CHẾT - HỌC ĐI CHỜ CHI, TẮT APP ĐI HỌC BÀI!",
+        "ĐỪNG ĐỂ BAO CÔNG SỨC ĐỔ SÔNG ĐỔ BIỂN - CHIẾN ĐẤU VÌ TƯƠNG LAI!",
+        "BÊN TRONG APP CŨNG KHÔNG CÓ PHAO ĐÂU - ĐI HỌC ĐI BẠN ƠI!",
+        "HÔM NAY CHẢY MỒ HÔI TRÊN TRANG SÁCH, NGÀY MAI MỈM CƯỜI TRƯỚC GIẤY BÁO TRÚNG TUYỂN!",
+        "KHÔNG CÓ ÁP LỰC, KHÔNG CÓ KIM CƯƠNG - CỐ LÊN!",
+        "BÂY GIỜ HOẶC KHÔNG BAO GIỜ - HỌC NGAY ĐI!",
+        "ĐẠI HỌC KHÔNG PHẢI LÀ CON ĐƯỜNG DUY NHẤT NHƯNG LÀ CON ĐƯỜNG NGẮN NHẤT!",
+        "HÃY ĐỂ SỰ CHĂM CHỈ CỦA BẠN LÊN TIẾNG - BỎ ĐIỆN THOẠI XUỐNG!"
+    ];
+
+    const bgThemes = ['theme-stars', 'theme-clouds', 'theme-nebula', 'theme-aurora'];
+
+    function initFocusModeStars() {
+        const overlay = document.getElementById('login-overlay');
+        if (!overlay || overlay.querySelector('.clouds-bg')) return;
+        
+        const clouds = document.createElement('div');
+        clouds.className = 'clouds-bg';
+        overlay.insertBefore(clouds, overlay.firstChild);
+        
+        for (let i = 0; i < 40; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = Math.random() * 3 + 1 + 'px';
+            star.style.height = star.style.width;
+            star.style.top = Math.random() * 100 + '%';
+            star.style.left = Math.random() * 200 + 'vw';
+            star.style.setProperty('--twinkle-dur', (Math.random() * 2 + 1) + 's');
+            star.style.setProperty('--drift-dur', (Math.random() * 50 + 50) + 's');
+            overlay.insertBefore(star, overlay.firstChild);
+        }
+    }
+
+    function updateFocusMode() {
+        const now = Date.now();
+        const loginOverlay = document.getElementById('login-overlay');
+
+        if (now < EXAM_START_DATE) {
+            const diff = EXAM_START_DATE - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const blockIndex = Math.floor(now / (30 * 60 * 1000));
+            const quoteIndex = blockIndex % focusQuotes.length;
+            const themeIndex = blockIndex % bgThemes.length;
+
+            if (focusTitleText) focusTitleText.innerText = 'KÌ THI THPTQG 2026';
+            if (focusTimerText) focusTimerText.innerText = `CÒN ${days} NGÀY ${hours} GIỜ ${mins} PHÚT ${secs} GIÂY LÀ BƯỚC VÀO PHÒNG THI!`;
+            if (focusSloganText) focusSloganText.innerText = focusQuotes[quoteIndex];
+
+            if (focusCountdownContainer) focusCountdownContainer.style.display = 'flex';
+            if (focusSuccessMsg) focusSuccessMsg.style.display = 'none';
+            if (loginFormDiv) loginFormDiv.style.display = 'none';
+            if (roleSelectorDiv) roleSelectorDiv.style.display = 'none';
+            
+            if (loginOverlay) {
+                bgThemes.forEach(t => loginOverlay.classList.remove(t));
+                loginOverlay.classList.add('focus-active', bgThemes[themeIndex]);
+                initFocusModeStars();
+            }
+        } else if (now >= EXAM_START_DATE && now < EXAM_END_DATE) {
+            const blockIndex = Math.floor(now / (30 * 60 * 1000));
+            const themeIndex = blockIndex % bgThemes.length;
+
+            if (focusTitleText) focusTitleText.innerText = 'KÌ THI THPTQG 2026';
+            if (focusTimerText) focusTimerText.innerText = 'KÌ THI THPTQG 2026 ĐANG DIỄN RA!';
+            if (focusSloganText) focusSloganText.innerText = 'BÌNH TĨNH - TỰ TIN - CHIẾN THẮNG! HỆ THỐNG SẼ MỞ KHÓA VÀO LÚC 17H LÀM ĐỒ ĂN MỪNG!';
+
+            if (focusCountdownContainer) focusCountdownContainer.style.display = 'flex';
+            if (focusSuccessMsg) focusSuccessMsg.style.display = 'none';
+            if (loginFormDiv) loginFormDiv.style.display = 'none';
+            if (roleSelectorDiv) roleSelectorDiv.style.display = 'none';
+            
+            if (loginOverlay) {
+                bgThemes.forEach(t => loginOverlay.classList.remove(t));
+                loginOverlay.classList.add('focus-active', bgThemes[themeIndex]);
+                initFocusModeStars();
+            }
+        } else {
+            if (focusCountdownContainer) focusCountdownContainer.style.display = 'none';
+            if (focusSuccessMsg) focusSuccessMsg.style.display = 'block';
+            if (loginFormDiv) loginFormDiv.style.display = 'flex';
+            if (roleSelectorDiv) roleSelectorDiv.style.display = 'grid';
+            
+            if (loginOverlay) {
+                loginOverlay.classList.remove('focus-active');
+                bgThemes.forEach(t => loginOverlay.classList.remove(t));
+                const extras = loginOverlay.querySelectorAll('.star, .clouds-bg');
+                extras.forEach(el => el.remove());
+            }
+        }
+    }
+
+    updateFocusMode();
+    setInterval(updateFocusMode, 1000);
 
     // Khởi chạy ứng dụng
     window.initApp();
