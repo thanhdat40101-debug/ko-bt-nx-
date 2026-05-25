@@ -19,21 +19,6 @@
     <div class="app-container">
 
 
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-content">
-                <div class="logo-area">
-                    <h1 class="main-title">Tiệm GOAT POS</h1>
-                    <p class="current-date"><span id="header-date">25 Tháng 4, 2024</span></p>
-                </div>
-                <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
-                    <span id="user-badge" class="user-badge">Thu ngân</span>
-                    <button class="logout-btn" onclick="logout()" title="Đăng xuất" style="background: #f1f5f9; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ef4444; transition: all 0.2s;">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
 
         <!-- Main Body Content -->
         <main class="main-content" id="main-content">
@@ -48,7 +33,7 @@
                 <div class="stats-grid">
                     <div class="stat-card" id="card-revenue">
                         <div class="stat-top">
-                            <span class="stat-label">DOANH THU HÔM NAY</span>
+                            <span class="stat-label" id="revenue-title">DOANH THU HÔM NAY</span>
                             <div class="stat-icon-box revenue">
                                 <i class="fa-solid fa-dollar-sign"></i>
                             </div>
@@ -158,6 +143,13 @@
                             <span class="menu-label">Quản lý ca</span>
                         </div>
                         <span class="menu-chevron">›</span>
+                    </div>
+                    <div class="menu-item" onclick="logout()" style="justify-content: space-between; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                        <div class="menu-item-left">
+                            <span class="menu-icon" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i></span>
+                            <span class="menu-label" style="color: #ef4444; font-weight: bold;">Đăng xuất</span>
+                        </div>
+                        <span id="user-badge" class="user-badge" style="position: static; transform: none; font-size: 12px; padding: 4px 8px;">Thu ngân</span>
                     </div>
                 </div>
 
@@ -549,9 +541,12 @@
                         <h2 class="screen-title" style="margin-bottom: 2px;">Danh Sách Pha Chế</h2>
                         <p class="screen-subtitle" style="margin-bottom: 0;">Màn hình Quầy Bar thời gian thực</p>
                     </div>
-                    <div class="bar-filter-tabs" style="display: flex; gap: 8px; background: #e2e8f0; padding: 4px; border-radius: 10px; align-items: center;">
-                        <button id="bar-tab-pending" class="bar-filter-btn active" onclick="switchBarTab('pending')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: white; color: #0284c7;">Đang chờ</button>
-                        <button id="bar-tab-history" class="bar-filter-btn" onclick="switchBarTab('history')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569;">Lịch sử xong</button>
+                    <div class="bar-header-actions">
+                        <div class="bar-filter-tabs" style="display: flex; gap: 8px; background: #e2e8f0; padding: 4px; border-radius: 10px; align-items: center;">
+                            <button id="bar-tab-pending" class="bar-filter-btn active" onclick="switchBarTab('pending')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: white; color: #0284c7;">Đang chờ</button>
+                            <button id="bar-tab-history" class="bar-filter-btn" onclick="switchBarTab('history')" style="border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569;">Lịch sử xong</button>
+                        </div>
+                        <button class="bar-logout-btn" onclick="logout()" title="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i></button>
                     </div>
                 </div>
                 

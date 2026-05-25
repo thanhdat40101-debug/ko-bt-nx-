@@ -622,6 +622,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         document.addEventListener('touchend', function(e) {
+            if (isDragging && e.changedTouches && e.changedTouches.length > 0) {
+                let touch = e.changedTouches[0];
+                let targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (targetElement) {
+                    let targetTableItem = targetElement.closest('.table-item');
+                    if (targetTableItem && targetTableItem.id !== `table-${draggedTableId}`) {
+                        const targetId = parseInt(targetTableItem.id.replace('table-', ''));
+                        if (!isNaN(targetId)) {
+                            lastHoveredTableId = targetId;
+                        }
+                    }
+                }
+            }
             cancelDragAttempt();
         });
 
@@ -1352,6 +1365,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateDashboardUI = function() {
         if (document.getElementById('stat-revenue')) {
             document.getElementById('stat-revenue').innerText = `${stats.totalRevenue.toLocaleString()} đ`;
+            const today = new Date();
+            const dateString = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+            const titleEl = document.getElementById('revenue-title');
+            if (titleEl) titleEl.innerText = `DOANH THU HÔM NAY (${dateString})`;
         }
         if (document.getElementById('stat-orders')) {
             document.getElementById('stat-orders').innerText = stats.totalOrders;
