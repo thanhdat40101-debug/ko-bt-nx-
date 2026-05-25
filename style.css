@@ -2224,3 +2224,12 @@ body.dark-theme .bar-empty-desc {
     opacity: 0.7;
 }
 
+
+/* --- iOS SAFARI ANTI-ZOOM AND ANTI-SELECT --- */
+html, body, button, .table-item, .menu-item {
+    touch-action: manipulation !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
