@@ -2997,111 +2997,223 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }, 1000);
+    // --- STREAK (NGỌN LỬA) ---
+    window.toggleFire = function() {
+        const btn = document.getElementById('streak-btn');
+        if (btn) {
+            btn.classList.toggle('lit');
+        }
+    };
+
     // --- FOCUS MODE (Countdown) ---
-    const EXAM_START_DATE = new Date("2026-06-11T07:30:00").getTime();
-    const EXAM_END_DATE = new Date("2026-06-13T17:00:00").getTime();
+    const EXAM_START_DATE = new Date("2026-06-11T00:00:00").getTime(); // 00:00 ngày 11/06/2026
+    const EXAM_END_DATE   = new Date("2026-06-13T17:00:00").getTime();
     const focusCountdownContainer = document.getElementById('focus-countdown-container');
-    const focusTitleText = document.getElementById('focus-title-text');
-    const focusTimerText = document.getElementById('focus-timer-text');
+    // const focusTitleText  = document.getElementById('focus-title-text');
+    const focusTimerText  = document.getElementById('focus-timer-text');
     const focusSloganText = document.getElementById('focus-slogan-text');
     const focusSuccessMsg = document.getElementById('focus-success-msg');
-    const loginFormDiv = document.querySelector('.login-form');
+    const loginFormDiv    = document.querySelector('.login-form');
     const roleSelectorDiv = document.querySelector('.role-selector');
 
+    // ===== 20 SLOGAN - CHỦ ĐỀ ĐẬU ĐẠI HỌC / UTC (Không có chữ "code") =====
     const focusQuotes = [
-        "CÁ CHÉP HÓA RỒNG - TẬP TRUNG ÔN THI, KHÔNG SỬA CODE!",
-        "12 NĂM ĐÈN SÁCH - QUYẾT TÂM ĐẬU NGUYỆN VỌNG 1!",
-        "BÚT SA GÀ CHẾT - HỌC ĐI CHỜ CHI, TẮT APP ĐI HỌC BÀI!",
-        "ĐỪNG ĐỂ BAO CÔNG SỨC ĐỔ SÔNG ĐỔ BIỂN - CHIẾN ĐẤU VÌ TƯƠNG LAI!",
-        "BÊN TRONG APP CŨNG KHÔNG CÓ PHAO ĐÂU - ĐI HỌC ĐI BẠN ƠI!",
-        "HÔM NAY CHẢY MỒ HÔI TRÊN TRANG SÁCH, NGÀY MAI MỈM CƯỜI TRƯỚC GIẤY BÁO TRÚNG TUYỂN!",
-        "KHÔNG CÓ ÁP LỰC, KHÔNG CÓ KIM CƯƠNG - CỐ LÊN!",
-        "BÂY GIỜ HOẶC KHÔNG BAO GIỜ - HỌC NGAY ĐI!",
-        "ĐẠI HỌC KHÔNG PHẢI LÀ CON ĐƯỜNG DUY NHẤT NHƯNG LÀ CON ĐƯỜNG NGẮN NHẤT!",
-        "HÃY ĐỂ SỰ CHĂM CHỈ CỦA BẠN LÊN TIẾNG - BỎ ĐIỆN THOẠI XUỐNG!"
+        "CON ĐƯỜNG UTC DÀNH CHO NHỮNG KẺ CHINH PHỤC! HỌC HẾT MÌNH, TỰ TIN TỎA SÁNG!",
+        "QUYẾT TÂM ĐẬU NGUYỆN VỌNG 1 - ĐẠI HỌC GIAO THÔNG VẬN TẢI ĐÓN CHÀO BẠN!",
+        "12 NĂM ĐÈN SÁCH - NUÔI CHÍ LỚN VƯƠN XA! BÌNH TĨNH, TỰ TIN, CHIẾN THẮNG!",
+        "MỤC TIÊU RÕ RÀNG - HÀNH ĐỘNG MẠNH MẼ! UTC 2026 THẲNG TIẾN!",
+        "HÔM NAY CHẢY MỒ HÔI TRÊN TRANG SÁCH - NGÀY MAI MỈM CƯỜI TRƯỚC GIẤY BÁO TRÚNG TUYỂN!",
+        "CÁ CHÉP HÓA RỒNG - TẬP TRUNG ÔN THI, QUYẾT TÂM ĐỖ ĐẠI HỌC!",
+        "KHÔNG CÓ ÁP LỰC, KHÔNG CÓ KIM CƯƠNG - CỐ LÊN! ĐỈNH CAO ĐANG CHỜ!",
+        "GIẤY BÁO TRÚNG TUYỂN LÀ PHẦN THƯỞNG ĐẸP NHẤT CHO SỰ CỐ GẮNG CỦA BẠN!",
+        "NGUYỆN VỌNG 1 ĐANG CHỜ BẠN - ĐỪNG ĐỂ NÓ ĐỢI! CHIẾN ĐẤU NGAY HÔM NAY!",
+        "SỨC MẠNH KHÔNG NẰM Ở SỰ THÔNG MINH - NẰM Ở SỰ KIÊN TRÌ VÀ QUYẾT TÂM!",
+        "MỖI PHÚT ÔN TẬP HÔM NAY LÀ MỘT ĐIỂM CỘNG TRÊN BẢNG THI THPTQG 2026!",
+        "PHÒNG THI ĐANG CHỜ ĐỢI - BẠN ĐÃ SẴN SÀNG CHINH PHỤC CHƯA?",
+        "NIỀM TIN LÀ ĐỘNG LỰC - SỰ NỖ LỰC LÀ CHÌA KHÓA MỞ CỬA ĐẠI HỌC!",
+        "ĐỪNG ĐỂ BAO CÔNG SỨC ĐỔ SÔNG ĐỔ BIỂN - CHIẾN ĐẤU HẾT MÌNH VÌ TƯƠNG LAI!",
+        "BÌNH TĨNH - TỰ TIN - ĐỌC KỸ ĐỀ - LÀM BÀI THẬT TỐT! UTC 2026 CHÀO ĐÓN!",
+        "MỖI MỒ HÔI NGÀY HÔM NAY LÀ MỘT BƯỚC GẦN HƠN CỔNG TRƯỜNG ĐẠI HỌC!",
+        "HÃY ĐỂ SỰ CHĂM CHỈ CỦA BẠN LÊN TIẾNG TRONG PHÒNG THI THÁNG 6!",
+        "TRĂM CUỘC THI CHỈ CÓ MỘT CƠ HỘI NÀY - HÃY TẬN DỤNG TOÀN LỰC!",
+        "NUÔI DƯỠNG NGỌN LỬA HỌC TẬP MỖI NGÀY - ĐỂ KỲ THI NÀY LÀ NGÀY TỎA SÁNG!",
+        "12 NĂM ĐÈN SÁCH - QUYẾT TÂM ĐẬU NGUYỆN VỌNG 1! MỘT BƯỚC LÊN ĐẠI HỌC!"
     ];
 
-    const bgThemes = ['theme-stars', 'theme-clouds', 'theme-nebula', 'theme-aurora'];
+    // ===== CẤU HÌNH ẢNH NỀN AI-BASED NGẪU NHIÊN KHI TẢI TRANG & XOAY VÒNG 30 PHÚT =====
+    const SESSION_RANDOM_SEED = Math.floor(Math.random() * 1000000);
+    let focusBgLayer   = null;
+    let currentBgIdx   = -1;
 
-    function initFocusModeStars() {
+    function initFocusBgLayer(overlay) {
+        if (focusBgLayer) return;
+        focusBgLayer = document.createElement('div');
+        focusBgLayer.id = 'focus-bg-layer';
+        Object.assign(focusBgLayer.style, {
+            position: 'absolute',
+            inset: '0',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: '0',
+            zIndex: '0',
+            pointerEvents: 'none',
+            transition: 'opacity 1.4s ease-in-out'
+        });
+        overlay.insertBefore(focusBgLayer, overlay.firstChild);
+        setTimeout(() => { focusBgLayer.style.opacity = '1'; }, 80);
+    }
+
+    function setFocusBgImage(blockIndex) {
+        if (!focusBgLayer) return;
+        const seed = SESSION_RANDOM_SEED + blockIndex;
+        if (seed === currentBgIdx) return;
+        currentBgIdx = seed;
+        const url = `https://images.unsplash.com/featured/1600x900/?exam-preparation,study-inspiration,graduation-goals,future-goals,minimalist-workspace,focus-ambiance&sig=${seed}`;
+        focusBgLayer.style.opacity = '0';
+        setTimeout(() => {
+            focusBgLayer.style.background = [
+                'linear-gradient(to bottom, rgba(5,10,30,0.60) 0%, rgba(8,18,45,0.45) 45%, rgba(5,10,30,0.68) 100%)',
+                `url('${url}') center/cover no-repeat`
+            ].join(', ');
+            focusBgLayer.style.opacity = '1';
+        }, 480);
+    }
+
+    function initFocusModeParticles() {
         const overlay = document.getElementById('login-overlay');
-        if (!overlay || overlay.querySelector('.clouds-bg')) return;
-        
-        const clouds = document.createElement('div');
-        clouds.className = 'clouds-bg';
-        overlay.insertBefore(clouds, overlay.firstChild);
-        
-        for (let i = 0; i < 40; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            star.style.width = Math.random() * 3 + 1 + 'px';
-            star.style.height = star.style.width;
-            star.style.top = Math.random() * 100 + '%';
-            star.style.left = Math.random() * 200 + 'vw';
-            star.style.setProperty('--twinkle-dur', (Math.random() * 2 + 1) + 's');
-            star.style.setProperty('--drift-dur', (Math.random() * 50 + 50) + 's');
-            overlay.insertBefore(star, overlay.firstChild);
+        if (!overlay) return;
+        initFocusBgLayer(overlay);
+        if (overlay.querySelector('.star')) return; // đã tạo rồi
+
+        // 50 ngôi sao nhấp nháy
+        for (let i = 0; i < 50; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            const sz = Math.random() * 3 + 1;
+            s.style.width  = sz + 'px';
+            s.style.height = sz + 'px';
+            s.style.top  = Math.random() * 100 + '%';
+            s.style.left = Math.random() * 100 + '%';
+            s.style.setProperty('--twinkle-dur', (Math.random() * 2.5 + 0.8) + 's');
+            s.style.setProperty('--drift-dur',   (Math.random() * 6   + 4  ) + 's');
+            overlay.appendChild(s);
+        }
+
+        // 5 chim bay (emoji)
+        ['🕊','🦅','🐦','🕊','🦅'].forEach((em, i) => {
+            const b = document.createElement('div');
+            b.className = 'bird-particle';
+            b.textContent = em;
+            b.style.top  = (12 + Math.random() * 50) + '%';
+            b.style.left = '-80px';
+            b.style.setProperty('--bird-size', (9 + Math.random() * 9) + 'px');
+            b.style.setProperty('--bird-dur',  (17 + Math.random() * 20) + 's');
+            b.style.animationDelay = (i * 5) + 's';
+            overlay.appendChild(b);
+        });
+
+        // 8 hạt sáng bốc lên
+        const glowCols = ['rgba(255,210,80,.65)','rgba(255,160,50,.55)','rgba(200,220,255,.5)','rgba(100,220,180,.5)'];
+        for (let i = 0; i < 8; i++) {
+            const g = document.createElement('div');
+            g.className = 'glow-particle';
+            const sz = 5 + Math.random() * 9;
+            g.style.width  = sz + 'px';
+            g.style.height = sz + 'px';
+            g.style.background = glowCols[i % glowCols.length];
+            g.style.bottom = (4 + Math.random() * 32) + '%';
+            g.style.left   = (4 + Math.random() * 90) + '%';
+            g.style.setProperty('--glow-dur', (4 + Math.random() * 5) + 's');
+            g.style.animationDelay = (i * 0.65) + 's';
+            overlay.appendChild(g);
+        }
+
+        // 6 tia aurora (chỉ visible ở theme-aurora)
+        const rayCols = ['rgba(52,211,153,.4)','rgba(34,197,94,.35)','rgba(56,189,248,.35)','rgba(99,102,241,.3)','rgba(167,243,208,.4)','rgba(110,231,183,.35)'];
+        for (let i = 0; i < 6; i++) {
+            const r = document.createElement('div');
+            r.className = 'aurora-ray';
+            r.style.left = (4 + i * 16) + '%';
+            r.style.background = `linear-gradient(to top, ${rayCols[i]}, transparent)`;
+            r.style.setProperty('--ray-dur', (8 + Math.random() * 8) + 's');
+            r.style.animationDelay = (i * 1.4) + 's';
+            overlay.appendChild(r);
         }
     }
 
+    const bgThemes = ['theme-stars', 'theme-clouds', 'theme-nebula', 'theme-aurora'];
+
     function updateFocusMode() {
-        const now = Date.now();
+        const now        = Date.now();
         const loginOverlay = document.getElementById('login-overlay');
+        const blockIndex = Math.floor(now / (30 * 60 * 1000)); // block 30 phút
 
         if (now < EXAM_START_DATE) {
-            const diff = EXAM_START_DATE - now;
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+            const diff  = EXAM_START_DATE - now;
+            const days  = Math.floor(diff / 864e5);
+            const hours = Math.floor((diff % 864e5) / 36e5);
+            const mins  = Math.floor((diff % 36e5)  / 6e4);
+            const secs  = Math.floor((diff % 6e4)   / 1000);
 
-            const blockIndex = Math.floor(now / (30 * 60 * 1000));
-            const quoteIndex = blockIndex % focusQuotes.length;
-            const themeIndex = blockIndex % bgThemes.length;
+            const quoteIdx = blockIndex % focusQuotes.length;
+            const themeIdx = blockIndex % bgThemes.length;
 
-            if (focusTitleText) focusTitleText.innerText = 'KÌ THI THPTQG 2026';
-            if (focusTimerText) focusTimerText.innerText = `CÒN ${days} NGÀY ${hours} GIỜ ${mins} PHÚT ${secs} GIÂY LÀ BƯỚC VÀO PHÒNG THI!`;
-            if (focusSloganText) focusSloganText.innerText = focusQuotes[quoteIndex];
+            // if (focusTitleText)  focusTitleText.innerText  = 'KÌ THI THPTQG 2026';
+            if (focusTimerText)  focusTimerText.innerText  = `CÒN ${days} NGÀY ${hours} GIỜ ${mins} PHÚT ${secs} GIÂY LÀ BƯỚC VÀO PHÒNG THI!`;
+            if (focusSloganText) {
+                focusSloganText.innerText = focusQuotes[quoteIdx];
+                focusSloganText.style.display = 'block';
+            }
 
             if (focusCountdownContainer) focusCountdownContainer.style.display = 'flex';
             if (focusSuccessMsg) focusSuccessMsg.style.display = 'none';
-            if (loginFormDiv) loginFormDiv.style.display = 'none';
+            if (loginFormDiv)    loginFormDiv.style.display    = 'none';
             if (roleSelectorDiv) roleSelectorDiv.style.display = 'none';
-            
+
             if (loginOverlay) {
                 bgThemes.forEach(t => loginOverlay.classList.remove(t));
-                loginOverlay.classList.add('focus-active', bgThemes[themeIndex]);
-                initFocusModeStars();
+                loginOverlay.classList.add('focus-active', bgThemes[themeIdx]);
+                initFocusModeParticles();
+                setFocusBgImage(blockIndex);
             }
+
         } else if (now >= EXAM_START_DATE && now < EXAM_END_DATE) {
-            const blockIndex = Math.floor(now / (30 * 60 * 1000));
-            const themeIndex = blockIndex % bgThemes.length;
+            const themeIdx = blockIndex % bgThemes.length;
 
-            if (focusTitleText) focusTitleText.innerText = 'KÌ THI THPTQG 2026';
-            if (focusTimerText) focusTimerText.innerText = 'KÌ THI THPTQG 2026 ĐANG DIỄN RA!';
-            if (focusSloganText) focusSloganText.innerText = 'BÌNH TĨNH - TỰ TIN - CHIẾN THẮNG! HỆ THỐNG SẼ MỞ KHÓA VÀO LÚC 17H LÀM ĐỒ ĂN MỪNG!';
+            // if (focusTitleText)  focusTitleText.innerText  = 'KÌ THI THPTQG 2026';
+            if (focusTimerText)  focusTimerText.innerText  = 'KÌ THI THPTQG 2026 ĐANG DIỄN RA!';
+            if (focusSloganText) {
+                focusSloganText.innerText = 'BÌNH TĨNH - TỰ TIN - CHIẾN THẮNG! HỆ THỐNG SẼ MỞ KHÓA VÀO LÚC 17H LÀM ĐỒ ĂN MỪNG!';
+                focusSloganText.style.display = 'block';
+            }
 
             if (focusCountdownContainer) focusCountdownContainer.style.display = 'flex';
             if (focusSuccessMsg) focusSuccessMsg.style.display = 'none';
-            if (loginFormDiv) loginFormDiv.style.display = 'none';
+            if (loginFormDiv)    loginFormDiv.style.display    = 'none';
             if (roleSelectorDiv) roleSelectorDiv.style.display = 'none';
-            
+
             if (loginOverlay) {
                 bgThemes.forEach(t => loginOverlay.classList.remove(t));
-                loginOverlay.classList.add('focus-active', bgThemes[themeIndex]);
-                initFocusModeStars();
+                loginOverlay.classList.add('focus-active', bgThemes[themeIdx]);
+                initFocusModeParticles();
+                setFocusBgImage(blockIndex);
             }
+
         } else {
             if (focusCountdownContainer) focusCountdownContainer.style.display = 'none';
             if (focusSuccessMsg) focusSuccessMsg.style.display = 'block';
-            if (loginFormDiv) loginFormDiv.style.display = 'flex';
+            if (loginFormDiv)    loginFormDiv.style.display    = 'flex';
             if (roleSelectorDiv) roleSelectorDiv.style.display = 'grid';
-            
+            if (focusSloganText) focusSloganText.style.display = 'none';
+
             if (loginOverlay) {
                 loginOverlay.classList.remove('focus-active');
                 bgThemes.forEach(t => loginOverlay.classList.remove(t));
-                const extras = loginOverlay.querySelectorAll('.star, .clouds-bg');
-                extras.forEach(el => el.remove());
+                loginOverlay.querySelectorAll('.star,.bird-particle,.glow-particle,.aurora-ray,#focus-bg-layer')
+                    .forEach(el => el.remove());
+                focusBgLayer = null;
+                currentBgIdx = -1;
             }
         }
     }
