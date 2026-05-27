@@ -2660,3 +2660,76 @@ html, body, button, .table-item, .menu-item {
 body.login-active .app-container {
     display: none !important;
 }
+
+/* Mobile-Responsive Optimization for Exam Lock Screen */
+@media (max-width: 480px) {
+    /* 1. Scale down the title to fit nicely and wrap clean */
+    .login-title-line {
+        font-size: 16px !important;
+        letter-spacing: 0px !important;
+        font-weight: 800 !important;
+        line-height: 1.4 !important;
+        padding: 0 10px !important;
+    }
+    
+    /* 2. Scale down the countdown blocks to display on a single line without wrapping */
+    .countdown-blocks-wrapper {
+        gap: 12px !important;
+        margin: 16px 0 !important;
+    }
+    
+    .countdown-number-box {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 28px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 16px rgba(189, 22, 34, 0.2) !important;
+    }
+    
+    .countdown-label {
+        font-size: 10px !important;
+        margin-top: 6px !important;
+    }
+    
+    /* 3. Optimize container and card spacing for schedule detail */
+    .exam-schedule-container {
+        gap: 10px !important;
+        margin-top: 16px !important;
+        padding: 0 8px !important;
+    }
+    
+    .schedule-day-card {
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+    }
+    
+    .day-header {
+        gap: 8px !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .day-badge {
+        font-size: 9.5px !important;
+        padding: 3px 8px !important;
+    }
+    
+    .day-title {
+        font-size: 11.5px !important;
+    }
+    
+    .subject-row-group {
+        gap: 3px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .subject-name {
+        font-size: 12.5px !important;
+        line-height: 1.3 !important;
+    }
+    
+    .subject-detail-row {
+        font-size: 11px !important;
+        gap: 6px !important;
+    }
+}
