@@ -6,7 +6,7 @@
     <title>Tiệm GOAT POS - Mobile</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Goat POS">
@@ -709,15 +709,10 @@
 
         <!-- Login Overlay (Glassmorphism Modal) -->
         <div id="login-overlay" class="login-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-            
-
-            <div class="login-container" style="position: relative; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(255, 255, 255, 0.4); width: 88%; max-width: 360px; border-radius: 28px; padding: 28px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; gap: 16px;">
+            <div class="login-container" style="position: relative; background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(255, 255, 255, 0.45); width: 92%; max-width: 600px; border-radius: 28px; padding: 32px; text-align: center; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: flex; flex-direction: column; gap: 14px;">
                 <!-- Tiêu đề chính -->
-                <div style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center;">
-                    <h2 class="login-title">KÌ THI THPTQG 2026</h2>
-                    <div class="focus-slogan" id="focus-slogan-text">
-                        CON ĐƯỜNG UTC DÀNH CHO NHỮNG KẺ CHINH PHỤC! HỌC HẾT MÌNH, TỰ TIN TỎA SÁNG!
-                    </div>
+                <div class="login-title-group" style="display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center; margin-bottom: 4px;">
+                    <div class="login-title-line">ĐẾM NGƯỢC NGÀY THI CHÍNH THỨC KÌ THI THPTQG 2026 - NGÀY 11, 12/06/2026</div>
                 </div>
 
                 <!-- Focus Mode Success Message -->
@@ -726,10 +721,126 @@
                 </div>
 
                 <!-- Focus Mode Countdown Timer -->
-                <div id="focus-countdown-container" style="display: none; flex-direction: column; gap: 16px; margin: 10px 0 20px;">
-                    <div class="focus-timer" id="focus-timer-text" style="font-size: 18px; font-weight: 800; color: #0f172a; background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%); padding: 20px; border-radius: 16px; border: 2px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); line-height: 1.4;">
+                <div id="focus-countdown-container" style="display: none; flex-direction: column; gap: 12px; margin: 4px 0;">
+                    <!-- Message text for Stage 2 -->
+                    <div class="focus-timer" id="focus-timer-text" style="display: none; font-size: 18px; font-weight: 800; color: #0f172a; background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%); padding: 20px; border-radius: 16px; border: 2px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); line-height: 1.4;">
                         CÒN 0 NGÀY 0 GIỜ 0 PHÚT 0 GIÂY LÀ BƯỚC VÀO PHÒNG THI!
                     </div>
+
+                    <!-- Countdown Blocks in Row (HUST style) for Stage 1 -->
+                    <div class="countdown-blocks-wrapper" id="countdown-blocks" style="display: none; justify-content: center; gap: 24px; margin: 20px 0;">
+                        <div class="countdown-block-item">
+                            <div class="countdown-number-box" id="countdown-days">00</div>
+                            <div class="countdown-label">NGÀY</div>
+                        </div>
+                        <div class="countdown-block-item">
+                            <div class="countdown-number-box" id="countdown-hours">00</div>
+                            <div class="countdown-label">GIỜ</div>
+                        </div>
+                        <div class="countdown-block-item">
+                            <div class="countdown-number-box" id="countdown-minutes">00</div>
+                            <div class="countdown-label">PHÚT</div>
+                        </div>
+                        <div class="countdown-block-item">
+                            <div class="countdown-number-box" id="countdown-seconds">00</div>
+                            <div class="countdown-label">GIÂY</div>
+                        </div>
+                    </div>
+
+                    <!-- Lịch Thi Details -->
+                    <div class="exam-schedule-container">
+                        <div class="schedule-day-card">
+                            <div class="day-header">
+                                <span class="day-badge">10/06</span>
+                                <span class="day-title">Làm Thủ Tục Dự Thi</span>
+                            </div>
+                            <div class="subject-row-group">
+                                <div class="subject-row">
+                                    <span class="subject-name">Chiều: Làm thủ tục dự thi</span>
+                                </div>
+                                <div class="subject-detail-row">
+                                    <span>Tập trung: <strong class="red-tint">14h00</strong> (Nghe quy chế & đính chính sai sót)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="schedule-day-card">
+                            <div class="day-header">
+                                <span class="day-badge">11/06</span>
+                                <span class="day-title">Ngày Thi Thứ Nhất</span>
+                            </div>
+                            <div class="subject-row-group">
+                                <div class="subject-row">
+                                    <span class="subject-name">Sáng: Môn Ngữ Văn (Làm bài: 120 phút)</span>
+                                </div>
+                                <div class="subject-detail-row">
+                                    <span>Phát đề: <strong class="red-tint">07h30</strong></span>
+                                    <span>•</span>
+                                    <span>Làm bài: <strong class="red-tint">07h35 - 09h35</strong></span>
+                                </div>
+                            </div>
+                            <div class="subject-row-group" style="margin-bottom: 0;">
+                                <div class="subject-row">
+                                    <span class="subject-name">Chiều: Môn Toán Học (Làm bài: 90 phút)</span>
+                                </div>
+                                <div class="subject-detail-row">
+                                    <span>Phát đề: <strong class="red-tint">14h20</strong></span>
+                                    <span>•</span>
+                                    <span>Làm bài: <strong class="red-tint">14h30 - 16h00</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="schedule-day-card">
+                            <div class="day-header">
+                                <span class="day-badge">12/06</span>
+                                <span class="day-title">Ngày Thi Thứ Hai (Tự Chọn)</span>
+                            </div>
+                            <div class="subject-row-group">
+                                <div class="subject-row">
+                                    <span class="subject-name">Sáng: Tự Chọn 1 - Lịch Sử (Làm bài: 50 phút)</span>
+                                </div>
+                                <div class="subject-detail-row">
+                                    <span>Phát đề: <strong class="red-tint">07h30</strong></span>
+                                    <span>•</span>
+                                    <span>Làm bài: <strong class="red-tint">07h35 - 08h25</strong></span>
+                                </div>
+                            </div>
+                            <div class="subject-row-group" style="margin-bottom: 0;">
+                                <div class="subject-row">
+                                    <span class="subject-name">Sáng: Tự Chọn 2 - Tiếng Anh (Làm bài: 50 phút)</span>
+                                </div>
+                                <div class="subject-detail-row">
+                                    <span>Phát đề: <strong class="red-tint">08h35</strong></span>
+                                    <span>•</span>
+                                    <span>Làm bài: <strong class="red-tint">08h40 - 09h30</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Công Bố Kết Quả Thi -->
+                        <div class="schedule-day-card" style="border-color: #fca5a5; background: #fff5f5; box-shadow: 0 4px 12px rgba(189, 22, 34, 0.06);">
+                            <div class="day-header" style="border-bottom: 1px dashed #fca5a5;">
+                                <span class="day-badge" style="background: #be123c;">01/07</span>
+                                <span class="day-title" style="color: #be123c;">Công Bố Kết Quả Thi</span>
+                            </div>
+                            <div class="subject-row-group" style="margin-bottom: 0;">
+                                <div class="subject-row">
+                                    <span class="subject-name" style="color: #be123c; font-size: 13.5px; font-weight: 800; font-family: 'Montserrat', sans-serif;">
+                                        Kết quả Kỳ thi tốt nghiệp THPT năm 2026 sẽ được công bố vào <span class="red-tint" style="font-weight: 900; text-decoration: underline;">8h00 ngày 1/7/2026</span>.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slogan container box with red border -->
+                <div class="slogan-container-box" id="slogan-container-box">
+                    <div class="focus-slogan" id="focus-slogan-text">
+                        <span id="slogan-content-text">CON ĐƯỜNG UTC DÀNH CHO NHỮNG KẺ CHINH PHỤC. HỌC HẾT MÌNH, TỰ TIN TỎA SÁNG!</span>
+                        <i class="fa-solid fa-arrows-rotate" id="refresh-slogan-btn" onclick="refreshSlogan()"></i>
+                    </div>
+                </div>
+                <div class="slogan-status-text" id="slogan-status-text">
+                    Câu động lực đổi tự động sau 2 phút (Đã bật)
                 </div>
 
                 <div class="role-selector" style="display: grid; grid-template-columns: 1fr 1fr 1fr; background: #e2e8f0; padding: 4px; border-radius: 14px; gap: 4px;">

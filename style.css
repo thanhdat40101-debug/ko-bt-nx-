@@ -18,9 +18,15 @@
     --nav-height: 72px;
 }
 
-html {
-    overflow: hidden;
-    height: 100vh;
+html, body {
+    width: 100%;
+}
+
+/* Lock viewport scroll only when user is logged in (meaning login overlay is hidden) */
+html:has(body #login-overlay[style*="display: none"]),
+body:has(#login-overlay[style*="display: none"]) {
+    overflow: hidden !important;
+    height: 100% !important;
 }
 
 body {
@@ -30,8 +36,6 @@ body {
     line-height: 1.5;
     display: flex;
     justify-content: center;
-    height: 100vh;
-    overflow: hidden;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -41,8 +45,7 @@ body {
     width: 100%;
     max-width: 480px;
     background-color: #fafafa;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
     position: relative;
     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     display: flex;
@@ -2294,264 +2297,366 @@ html, body, button, .table-item, .menu-item {
     -webkit-tap-highlight-color: transparent !important;
 }
 
-/* ============================================================
-   FOCUS MODE - ANIMATED BACKGROUND + PARTICLES
-   ============================================================ */
-
-/* Overlay lock */
+/* --- FOCUS MODE ANIMATED BACKGROUND THEMES --- */
 .login-overlay.focus-active {
-    overflow: hidden;
+    transition: background 2s ease-in-out, filter 2s ease-in-out;
 }
 
-/* --- Gradient themes (fallback khi ảnh chưa load xong) --- */
+/* Theme 1: Stars */
 .login-overlay.theme-stars {
-    background: linear-gradient(to bottom, #060b1e 0%, #0d1b4b 40%, #1a3a7c 100%) !important;
+    background: linear-gradient(to bottom, #050514 0%, #0c1a42 40%, #1e3a8a 100%) !important;
 }
+
+/* Theme 2: Clouds */
 .login-overlay.theme-clouds {
-    background: linear-gradient(to bottom, #1e1b4b 0%, #4c1d95 45%, #c2410c 80%, #fbbf24 100%) !important;
-    animation: sunsetShift 50s ease-in-out infinite alternate;
+    background: linear-gradient(to bottom, #1e293b 0%, #334155 50%, #475569 100%) !important;
 }
+
+/* Theme 3: Nebula */
 .login-overlay.theme-nebula {
-    background: linear-gradient(160deg, #010314 0%, #0c0c3a 40%, #1a0538 75%, #060f2b 100%) !important;
-    animation: galaxySpin 55s ease infinite;
+    background: linear-gradient(45deg, #2e0854 0%, #4a00e0 50%, #8e2de2 100%) !important;
+    background-size: 200% 200%;
+    animation: nebulaGradient 15s ease infinite;
 }
+
+@keyframes nebulaGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Theme 4: Aurora */
 .login-overlay.theme-aurora {
-    background: linear-gradient(135deg, #022c22 0%, #065f46 30%, #047857 55%, #0891b2 80%, #1d4ed8 100%) !important;
-    background-size: 300% 300%;
-    animation: auroraFlow 40s ease infinite alternate;
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important;
+    background-size: 200% 200%;
+    animation: auroraGradient 20s ease infinite alternate;
 }
 
-@keyframes sunsetShift {
-    0%   { filter: hue-rotate(0deg) brightness(0.85); }
-    50%  { filter: hue-rotate(12deg) brightness(1.05); }
-    100% { filter: hue-rotate(-8deg) brightness(0.92); }
-}
-@keyframes galaxySpin {
-    0%   { filter: brightness(0.75); }
-    40%  { filter: brightness(1.05); }
-    80%  { filter: brightness(0.90); }
-    100% { filter: brightness(0.80); }
-}
-@keyframes auroraFlow {
-    0%   { filter: hue-rotate(0deg) brightness(0.85); }
-    25%  { filter: hue-rotate(30deg) brightness(1.0); }
-    50%  { filter: hue-rotate(-15deg) brightness(1.1); }
-    75%  { filter: hue-rotate(50deg) brightness(0.9); }
-    100% { filter: hue-rotate(0deg) brightness(0.85); }
+@keyframes auroraGradient {
+    0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+    100% { background-position: 100% 50%; filter: hue-rotate(45deg); }
 }
 
-/* --- Layer ảnh nền thực tế (JS inject) --- */
-#focus-bg-layer {
+.clouds-bg {
     position: absolute;
-    inset: 0;
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    z-index: 0;
+    top: 0;
+    left: 0;
+    width: 200vw;
+    height: 100%;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 60%);
+    background-size: 200px 200px;
+    animation: driftClouds 120s linear infinite;
     pointer-events: none;
+    z-index: 1;
 }
 
-/* --- Ngôi sao nhấp nháy --- */
 .star {
     position: absolute;
-    background: #fff;
+    background-color: #fff;
     border-radius: 50%;
-    box-shadow: 0 0 6px 2px rgba(255,255,255,0.75);
-    animation:
-        twinkle var(--twinkle-dur, 1.5s) ease-in-out infinite alternate,
-        starDrift var(--drift-dur, 5s) ease-in-out infinite alternate;
-    z-index: 2;
+    box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8);
+    animation: twinkle var(--twinkle-dur) ease-in-out infinite alternate, driftStar var(--drift-dur) linear infinite;
+    z-index: 1;
     pointer-events: none;
+    transition: opacity 2s ease-in-out;
 }
 
-/* --- Chim bay --- */
-.bird-particle {
+.clouds-bg {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 200vw;
+    height: 100%;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 60%);
+    background-size: 200px 200px;
+    animation: driftClouds 120s linear infinite;
     pointer-events: none;
-    z-index: 3;
-    font-size: var(--bird-size, 13px);
-    animation: birdFly var(--bird-dur, 20s) linear infinite;
-    opacity: 0;
+    z-index: 1;
+    transition: opacity 2s ease-in-out;
 }
 
-/* --- Hạt sáng bốc lên --- */
-.glow-particle {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 2;
-    animation: glowRise var(--glow-dur, 6s) ease-out infinite;
-    opacity: 0;
+/* Control visibility based on themes */
+.login-overlay.theme-stars .star, .login-overlay.theme-aurora .star {
+    opacity: 1;
+}
+.login-overlay.theme-clouds .star, .login-overlay.theme-nebula .star {
+    opacity: 0.1;
 }
 
-/* --- Tia aurora --- */
-.aurora-ray {
-    position: absolute;
-    bottom: 0;
-    width: 4px;
-    border-radius: 4px 4px 0 0;
-    pointer-events: none;
-    z-index: 2;
-    transform-origin: bottom center;
-    animation: auroraRayAnim var(--ray-dur, 10s) ease-in-out infinite alternate;
-    opacity: 0;
-    display: none; /* JS sẽ bật lên qua class theme-aurora */
+.login-overlay.theme-clouds .clouds-bg {
+    opacity: 0.4;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 50%);
 }
-.login-overlay.theme-aurora .aurora-ray { display: block; }
+.login-overlay.theme-nebula .clouds-bg {
+    opacity: 0.2;
+    background-image: radial-gradient(circle at center, rgba(255,100,255,0.1) 0%, transparent 60%);
+}
+.login-overlay.theme-stars .clouds-bg, .login-overlay.theme-aurora .clouds-bg {
+    opacity: 0.05;
+}
 
-/* ============================================================
-   KEYFRAMES CHO PARTICLES
-   ============================================================ */
 @keyframes twinkle {
-    0%   { opacity: 0.08; transform: scale(0.6); box-shadow: none; }
-    60%  { opacity: 0.85; transform: scale(1.1); }
-    100% { opacity: 1;    transform: scale(1.35); box-shadow: 0 0 10px 3px rgba(255,255,255,0.9); }
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
 }
 
-@keyframes starDrift {
-    0%   { transform: translate(0, 0); }
-    33%  { transform: translate(-4px, 3px); }
-    66%  { transform: translate(4px, -3px); }
-    100% { transform: translate(0, 0); }
+@keyframes driftStar {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50vw); }
 }
 
-@keyframes birdFly {
-    0%   { transform: translateX(-80px) translateY(0) scaleX(1); opacity: 0; }
-    4%   { opacity: 0.9; }
-    35%  { transform: translateX(30vw) translateY(-35px) scaleX(1); }
-    65%  { transform: translateX(68vw) translateY(-12px) scaleX(1); }
-    96%  { opacity: 0.75; }
-    100% { transform: translateX(115vw) translateY(-45px) scaleX(1); opacity: 0; }
+@keyframes driftClouds {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100vw); }
 }
 
-@keyframes glowRise {
-    0%   { opacity: 0;   transform: translateY(0)    scale(1); }
-    25%  { opacity: 0.8; transform: translateY(-50px) scale(1.2); }
-    65%  { opacity: 0.35; transform: translateY(-120px) scale(0.9); }
-    100% { opacity: 0;   transform: translateY(-190px) scale(0.4); }
-}
-
-@keyframes auroraRayAnim {
-    0%   { opacity: 0;    height: 0%;  filter: hue-rotate(0deg); }
-    30%  { opacity: 0.55; }
-    65%  { height: 68%;  filter: hue-rotate(60deg); opacity: 0.7; }
-    100% { opacity: 0.2;  height: 40%;  filter: hue-rotate(120deg); }
-}
-
-/* ============================================================
-   STREAK "NGỌN LỬA" - GLASSMORPHISM & ANIMATION
-   ============================================================ */
-.streak-btn-glass {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 50% !important;
-    width: 64px !important;
-    height: 64px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    cursor: pointer !important;
-    padding: 0 !important;
-}
-.streak-btn-glass:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    transform: translateY(-2px);
-}
-.streak-btn-glass:active {
-    transform: translateY(0) scale(0.95);
-}
-
-/* Trạng thái chưa ấn (grayscale / dim) */
-.streak-btn-glass .fa-fire {
-    color: rgba(255, 255, 255, 0.5) !important;
-    filter: grayscale(1) opacity(0.6) !important;
-    transition: all 0.4s ease !important;
-}
-.streak-btn-glass #streak-days-label {
-    color: rgba(255, 255, 255, 0.6) !important;
-    transition: all 0.4s ease !important;
-}
-.streak-btn-glass:hover .fa-fire {
-    filter: grayscale(0.2) opacity(0.9) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Trạng thái đã ấn (Sáng rực rỡ neon) */
-.streak-btn-glass.lit {
-    animation: fireFlicker 1.8s ease-in-out infinite alternate;
-    background: rgba(253, 186, 116, 0.15) !important;
-    border-color: rgba(249, 115, 22, 0.4) !important;
-}
-.streak-btn-glass.lit .fa-fire {
-    color: #ff4500 !important;
-    filter: drop-shadow(0 0 8px #ff4500) drop-shadow(0 0 15px #ff8c00) drop-shadow(0 0 25px #ff0000) !important;
-}
-.streak-btn-glass.lit #streak-days-label {
-    color: #f97316 !important;
-}
-.streak-btn-glass.lit:hover .fa-fire {
-    filter: drop-shadow(0 0 12px #ff4500) drop-shadow(0 0 22px #ff8c00) drop-shadow(0 0 35px #ff0000) !important;
-}
-
-@keyframes fireFlicker {
-    0%   { filter: drop-shadow(0 0 6px rgba(255, 69, 0, 0.6)); }
-    50%  { filter: drop-shadow(0 0 12px rgba(255, 140, 0, 0.8)); }
-    100% { filter: drop-shadow(0 0 18px rgba(255, 0, 0, 0.9)); }
-}
-
-/* Streak tooltip animation */
-#streak-tooltip {
-    animation: tooltipPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes tooltipPop {
-    from { opacity: 0; transform: scale(0.85) translateY(-6px); }
-    to   { opacity: 1; transform: scale(1)    translateY(0); }
-}
-
-/* Login Header Title custom style */
-.login-title {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 32px;
-    font-weight: 900;
-    color: #0284c7;
-    margin: 0;
-    text-align: center;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    line-height: 1.2;
-    text-shadow: 0 2px 12px rgba(2, 132, 199, 0.5);
-}
-.focus-slogan {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 13px;
-    font-weight: 800;
-    color: #ef4444;
-    margin: 0;
-    text-align: center;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    line-height: 1.4;
-    text-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
-}
-
-/* ============================================================
-   LOGIN CONTAINER - đảm bảo nổi trên tất cả particles
-   ============================================================ */
+/* Ensure login container stays above stars */
 .login-container {
     position: relative;
     z-index: 10;
 }
 
-/* Stars sáng trên nền tối (theme-stars & theme-nebula) */
-.login-overlay.theme-stars .star,
-.login-overlay.theme-nebula .star { opacity: 1; }
+/* HUST style countdown banner elements */
+.login-title {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #dc2626; /* HUST style red */
+    margin: 0;
+    text-align: center;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-shadow: 
+        0 1px 0 #cbd5e1,
+        0 2px 0 #cbd5e1,
+        0 3px 0 #94a3b8,
+        0 4px 0 #94a3b8,
+        0 5px 0 #64748b,
+        0 6px 1px rgba(0,0,0,0.15),
+        0 0 5px rgba(0,0,0,0.1),
+        0 1px 3px rgba(0,0,0,0.2),
+        0 3px 5px rgba(0,0,0,0.15),
+        0 5px 10px rgba(0,0,0,0.2),
+        0 10px 10px rgba(0,0,0,0.15);
+}
 
-/* Stars mờ trên nền sáng / hoàng hôn */
-.login-overlay.theme-clouds .star { opacity: 0.2; }
-.login-overlay.theme-aurora .star { opacity: 0.12; }
+.countdown-blocks-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 15px 0;
+}
+
+.countdown-block-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 72px;
+}
+
+.countdown-number-box {
+    background: #dc2626; /* HUST red box */
+    color: #ffffff;
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 900;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    font-family: 'Inter', sans-serif;
+}
+
+.countdown-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #000000;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.login-overlay {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 40px 10px !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    z-index: 9999 !important;
+    overflow-y: visible !important;
+}
+
+.login-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    width: 92%;
+    max-width: 800px;
+    padding: 32px 10px;
+}
+
+.login-title-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.login-title-line {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    color: #bd1622; /* Crimson red */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.countdown-blocks-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin: 20px 0;
+}
+
+.countdown-block-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.countdown-number-box {
+    background: #bd1622; /* HUST red box */
+    color: #ffffff;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 900;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(189, 22, 34, 0.25);
+    font-family: 'Montserrat', sans-serif;
+}
+
+.countdown-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #bd1622;
+    margin-top: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.role-selector, .login-form {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* Exam Schedule Styling */
+.exam-schedule-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 24px auto 0;
+    width: 100%;
+    max-width: 480px;
+}
+
+.schedule-day-card {
+    background: #ffffff;
+    border: 1px solid #fecaca; /* Subtle red border */
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(189, 22, 34, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px dashed #fecaca;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.day-badge {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    color: #ffffff;
+    background: #bd1622;
+    padding: 4px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.day-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: #bd1622;
+    text-transform: uppercase;
+}
+
+.subject-row-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.subject-row {
+    text-align: left;
+}
+
+.subject-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #1e293b; /* Dark slate */
+}
+
+.subject-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: #64748b; /* Slate gray */
+}
+
+.red-tint {
+    color: #be123c !important; /* HUST red */
+}
+
+/* Hide the main POS app layout when the login overlay is active */
+body.login-active .app-container {
+    display: none !important;
+}
