@@ -3011,24 +3011,113 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Always calculate values relative to the target date, clamped to 0
         const diff = Math.max(0, EXAM_START_DATE - now);
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const remainingMsAfterDays = diff % (1000 * 60 * 60 * 24);
-        const hours = Math.floor(remainingMsAfterDays / (1000 * 60 * 60));
-        const remainingMsAfterHours = remainingMsAfterDays % (1000 * 60 * 60);
-        const minutes = Math.floor(remainingMsAfterHours / (1000 * 60));
-        const remainingMsAfterMinutes = remainingMsAfterHours % (1000 * 60);
-        const seconds = Math.floor(remainingMsAfterMinutes / 1000);
+
+        // Check for test parameter in URL, e.g., ?test_finish=true
+        const urlParams = new URLSearchParams(window.location.search);
+        const testFinish = urlParams.has('test_finish');
+        const isFinished = (diff <= 0) || testFinish;
+
+        const dateObj = new Date(now);
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth(); // June is 5
+        const date = dateObj.getDate();
+
+        // Check if Day 2 (June 12, 2026 or later, or ?test_day=2 or ?test_day2=true)
+        const testDay2 = urlParams.has('test_day2') || urlParams.get('test_day') === '2';
+        const isDay2 = (year > 2026) || (year === 2026 && month > 5) || (year === 2026 && month === 5 && date >= 12) || testDay2;
 
         const daysEl = document.getElementById('countdown-days');
         const hoursEl = document.getElementById('countdown-hours');
         const minsEl = document.getElementById('countdown-minutes');
         const secsEl = document.getElementById('countdown-seconds');
         const countdownBlocks = document.getElementById('countdown-blocks');
+        const labels = document.querySelectorAll('.countdown-block-item .countdown-label');
 
-        if (daysEl)   daysEl.innerText   = String(days).padStart(2, '0');
-        if (hoursEl)  hoursEl.innerText  = String(hours).padStart(2, '0');
-        if (minsEl)   minsEl.innerText   = String(minutes).padStart(2, '0');
-        if (secsEl)   secsEl.innerText   = String(seconds).padStart(2, '0');
+        if (isFinished) {
+            // Finished State
+            if (isDay2) {
+                // Day 2 text: LÀM BÌNH TĨNH NHÉ
+                if (daysEl) {
+                    daysEl.innerText = "LÀM";
+                    daysEl.classList.add('finished-glow');
+                }
+                if (hoursEl) {
+                    hoursEl.innerText = "BÌNH";
+                    hoursEl.classList.add('finished-glow');
+                }
+                if (minsEl) {
+                    minsEl.innerText = "TĨNH";
+                    minsEl.classList.add('finished-glow');
+                }
+                if (secsEl) {
+                    secsEl.innerText = "NHÉ";
+                    secsEl.classList.add('finished-glow');
+                }
+            } else {
+                // Day 1 text: ĐỖ NGUYỆN VỌNG 1
+                if (daysEl) {
+                    daysEl.innerText = "ĐỖ";
+                    daysEl.classList.add('finished-glow');
+                }
+                if (hoursEl) {
+                    hoursEl.innerText = "NGUYỆN";
+                    hoursEl.classList.add('finished-glow');
+                }
+                if (minsEl) {
+                    minsEl.innerText = "VỌNG";
+                    minsEl.classList.add('finished-glow');
+                }
+                if (secsEl) {
+                    secsEl.innerText = "1";
+                    secsEl.classList.add('finished-glow');
+                }
+            }
+
+            if (labels && labels.length >= 4) {
+                labels[0].style.display = 'none';
+                labels[1].style.display = 'none';
+                labels[2].style.display = 'none';
+                labels[3].style.display = 'none';
+            }
+        } else {
+            // Standard Countdown Mode
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const remainingMsAfterDays = diff % (1000 * 60 * 60 * 24);
+            const hours = Math.floor(remainingMsAfterDays / (1000 * 60 * 60));
+            const remainingMsAfterHours = remainingMsAfterDays % (1000 * 60 * 60);
+            const minutes = Math.floor(remainingMsAfterHours / (1000 * 60));
+            const remainingMsAfterMinutes = remainingMsAfterHours % (1000 * 60);
+            const seconds = Math.floor(remainingMsAfterMinutes / 1000);
+
+            if (daysEl) {
+                daysEl.innerText = String(days).padStart(2, '0');
+                daysEl.classList.remove('finished-glow');
+            }
+            if (hoursEl) {
+                hoursEl.innerText = String(hours).padStart(2, '0');
+                hoursEl.classList.remove('finished-glow');
+            }
+            if (minsEl) {
+                minsEl.innerText = String(minutes).padStart(2, '0');
+                minsEl.classList.remove('finished-glow');
+            }
+            if (secsEl) {
+                secsEl.innerText = String(seconds).padStart(2, '0');
+                secsEl.classList.remove('finished-glow');
+            }
+
+            if (labels && labels.length >= 4) {
+                labels[0].innerText = "NGÀY";
+                labels[0].style.display = '';
+                labels[1].innerText = "GIỜ";
+                labels[1].style.display = '';
+                labels[2].innerText = "PHÚT";
+                labels[2].style.display = '';
+                labels[3].innerText = "GIÂY";
+                labels[3].style.display = '';
+                labels.forEach(lbl => lbl.classList.remove('finished-label-color'));
+            }
+        }
 
         if (countdownBlocks) countdownBlocks.style.display = 'flex';
         if (focusTimerText)  focusTimerText.style.display  = 'none';
@@ -3043,6 +3132,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (focusSuccessMsg) focusSuccessMsg.style.display = 'none';
         if (loginFormDiv) loginFormDiv.style.display = 'none';
         if (roleSelectorDiv) roleSelectorDiv.style.display = 'none';
+
+        // Only show letter widget on the exam days (June 11 or later) or when ?test_finish=true or ?test_letter=true is used
+        const letterWidget = document.getElementById('exam-letter-widget');
+        if (letterWidget) {
+            const showLetter = isFinished || urlParams.has('test_letter');
+            if (showLetter) {
+                letterWidget.style.display = 'flex';
+            } else {
+                letterWidget.style.display = 'none';
+            }
+        }
         
         if (loginOverlay) {
             // Keep the background clean white and strip stars/clouds/layers
@@ -3069,6 +3169,86 @@ document.addEventListener('DOMContentLoaded', () => {
         const observer = new MutationObserver(syncBodyClass);
         observer.observe(loginOverlayEl, { attributes: true, attributeFilter: ['style'] });
         syncBodyClass();
+    }
+
+    // Render the exam motivation letter dynamically based on the date (composed NFC Vietnamese)
+    function renderExamLetter() {
+        const letterContentEl = document.getElementById('exam-letter-content');
+        if (!letterContentEl) return;
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth(); // 0-indexed, May is 4, June is 5
+        const date = now.getDate();
+
+        // Check if the current date is June 12, 2026 or later, or if testing day 2 via URL parameters (e.g. ?test_day=2 or ?test_day2=true)
+        const urlParams = new URLSearchParams(window.location.search);
+        const testDay2 = urlParams.has('test_day2') || urlParams.get('test_day') === '2';
+        const isDay2 = (year > 2026) || (year === 2026 && month > 5) || (year === 2026 && month === 5 && date >= 12) || testDay2;
+
+        let letterHTML = '';
+
+        if (!isDay2) {
+            // Day 1 / Before Day 1 Letter (final unique text)
+            letterHTML = `
+                <p class="letter-salutation">Thân gửi Sĩ tử 2026,</p>
+                <p>Thời khắc mà chúng ta đã mong chờ suốt 12 năm đèn sách cuối cùng đã gõ cửa. Ngày mai, bạn sẽ đặt những bước chân đầu tiên vào hội đồng thi để bắt đầu hành trình khẳng định bản thân với hai môn thi quan trọng: Ngữ Văn và Toán Học.</p>
+                <p>Tất cả những giọt mồ hôi rơi trên bàn học, những ly cà phê đêm muộn và cả những lo lắng tích tụ bấy lâu nay... hãy biến chúng thành động lực và bản lĩnh vững vàng nhất. Hãy bước vào phòng thi với tư thế của một chiến binh, làm bài hết sức mình, chắt chiu từng điểm số nhỏ nhất.</p>
+                <p>Hãy nhớ rằng, đằng sau bạn luôn có sự đồng hành và ủng hộ từ gia đình, thầy cô cùng hệ thống đếm ngược này. Chúc bạn có một ngày xuất trận rực rỡ, mở màn cho một mùa thi đại thắng!</p>
+                <p class="letter-wishes">Chúc bạn vững tin, làm bài thật tốt và ĐỖ NGUYỆN VỌNG 1!</p>
+                <div class="letter-signature">
+                    <p class="signature-date">Ngày 11 tháng 06 năm 2026</p>
+                    <p class="signature-sender">Hệ thống đếm ngược 💻✨</p>
+                </div>
+            `;
+        } else {
+            // Day 2 / After Day 1 Letter (final unique text)
+            letterHTML = `
+                <p class="letter-salutation">Thân gửi Sĩ tử 2026,</p>
+                <p>Chỉ còn một bước chân cuối cùng nữa thôi là bạn sẽ chạm tay vào tự do và hoàn thành trọn vẹn dấu mốc rực rỡ của tuổi học trò. Ngày thi đầu tiên đã ở lại phía sau, giờ là lúc bạn dồn toàn bộ trí lực và sự tập trung cao độ cho hai môn thi tự chọn: Lịch Sử và Tiếng Anh.</p>
+                <p>Đừng để những tiếc nuối hay mệt mỏi của ngày hôm qua ảnh hưởng đến tinh thần chiến đấu hôm nay. Hãy hít một hơi thật sâu, giữ cho tâm thế luôn vững vàng và viết tiếp trang cuối cùng của hành trình vượt vũ môn thật hoàn hảo.</p>
+                <p>Hãy tự tin đặt bút viết nên ước mơ của mình, vượt qua chặng cuối này một cách đầy tự hào. Sau buổi thi hôm nay, cả bầu trời tự do và tương lai tươi sáng đang đón chờ bạn!</p>
+                <p class="letter-wishes">Chúc bạn LÀM BÌNH TĨNH NHÉ, tự tin chiến thắng mọi câu hỏi khó!</p>
+                <div class="letter-signature">
+                    <p class="signature-date">Ngày 12 tháng 06 năm 2026</p>
+                    <p class="signature-sender">Hệ thống đếm ngược 💻✨</p>
+                </div>
+            `;
+        }
+
+        letterContentEl.innerHTML = letterHTML;
+    }
+
+    // Global functions to open and close the exam motivation letter
+    window.openExamLetter = function() {
+        const modal = document.getElementById('exam-letter-modal');
+        if (modal) {
+            renderExamLetter(); // Render content dynamically before showing
+            modal.style.display = 'flex';
+
+            // Hide the notification badge when read
+            const badge = document.querySelector('.envelope-badge');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+            // Save read status to localStorage
+            localStorage.setItem('exam_letter_read', 'true');
+        }
+    };
+
+    window.closeExamLetter = function() {
+        const modal = document.getElementById('exam-letter-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    // Check on load if the letter has already been read
+    if (localStorage.getItem('exam_letter_read') === 'true') {
+        const badge = document.querySelector('.envelope-badge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
     }
 
     // Khởi chạy ứng dụng

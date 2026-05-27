@@ -2733,3 +2733,322 @@ body.login-active .app-container {
         gap: 6px !important;
     }
 }
+
+/* Floating Letter Widget */
+.exam-letter-widget {
+    background: #ffffff;
+    border: 2px solid #bd1622;
+    border-radius: 20px;
+    padding: 16px;
+    margin: 20px auto 0;
+    width: 100%;
+    max-width: 480px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(189, 22, 34, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+    animation: pulseWidget 2s infinite alternate;
+}
+
+.exam-letter-widget:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(189, 22, 34, 0.15);
+    border-color: #be123c;
+}
+
+@keyframes pulseWidget {
+    0% {
+        box-shadow: 0 4px 16px rgba(189, 22, 34, 0.05);
+        border-color: #fecaca;
+    }
+    100% {
+        box-shadow: 0 10px 28px rgba(189, 22, 34, 0.18);
+        border-color: #bd1622;
+    }
+}
+
+.envelope-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.envelope-body {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    background: #bd1622;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(189, 22, 34, 0.3);
+}
+
+.envelope-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #fbbf24; /* Gold badge */
+    color: #000000;
+    font-size: 10px;
+    font-weight: 900;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    animation: scaleBadge 1s infinite alternate;
+}
+
+@keyframes scaleBadge {
+    0% { transform: scale(0.9); }
+    100% { transform: scale(1.1); }
+}
+
+.envelope-label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #bd1622;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Exam Letter Modal */
+.exam-letter-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    z-index: 100000; /* Higher than login overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeInModal 0.3s ease-out;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.letter-paper {
+    background: #fffdf6; /* Parchment cream */
+    border: 8px double #cbd5e1;
+    border-radius: 24px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    animation: slideUpLetter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes slideUpLetter {
+    from { transform: translateY(50px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.letter-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    font-size: 28px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.letter-close-btn:hover {
+    color: #be123c;
+}
+
+.letter-header {
+    text-align: center;
+    border-bottom: 2px solid #fecaca;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.pulse-heart {
+    font-size: 28px;
+    animation: pulseHeart 1.2s infinite;
+}
+
+@keyframes pulseHeart {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+.letter-header h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 18px;
+    color: #be123c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.letter-body {
+    font-family: 'Times New Roman', Times, 'Lora', 'Merriweather', serif !important;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: #334155;
+    text-align: justify;
+    margin-bottom: 24px;
+    flex: 1;
+}
+
+.letter-salutation {
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.letter-body p {
+    margin-bottom: 12px;
+    text-indent: 16px;
+}
+
+.letter-wishes {
+    font-weight: bold;
+    color: #be123c;
+    text-align: center;
+    text-indent: 0 !important;
+    margin-top: 16px;
+    font-size: 15.5px;
+}
+
+.letter-signature {
+    margin-top: 24px;
+    text-align: right;
+    font-style: italic;
+    font-size: 13.5px;
+    color: #475569;
+}
+
+.signature-sender {
+    font-weight: bold;
+    color: #be123c;
+}
+
+.letter-action-btn {
+    background: #bd1622;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(189, 22, 34, 0.25);
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.letter-action-btn:active {
+    transform: scale(0.98);
+    background: #991b1b;
+}
+
+/* Mobile responsive letter overlay styles */
+@media (max-width: 480px) {
+    .exam-letter-widget {
+        padding: 12px 14px !important;
+        margin-top: 16px !important;
+        gap: 12px !important;
+    }
+    
+    .envelope-body {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
+    }
+    
+    .envelope-badge {
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9px !important;
+    }
+    
+    .envelope-label {
+        font-size: 12px !important;
+    }
+    
+    .letter-paper {
+        padding: 24px 16px !important;
+        border-width: 4px !important;
+    }
+    
+    .letter-header h3 {
+        font-size: 15px !important;
+    }
+    
+    .letter-body {
+        font-size: 13px !important;
+        line-height: 1.5 !important;
+    }
+    
+    .letter-wishes {
+        font-size: 14px !important;
+    }
+
+    .countdown-number-box.finished-glow {
+        font-size: 13px !important;
+    }
+}
+
+/* Finished Countdown Glow State */
+.countdown-number-box.finished-glow {
+    background: linear-gradient(135deg, #d97706 0%, #be123c 100%) !important; /* Gold to Red Gradient */
+    box-shadow: 0 0 24px rgba(217, 119, 6, 0.6) !important;
+    animation: goldGlow 1.5s infinite alternate !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    font-size: 15px !important;
+}
+
+.countdown-label.finished-label-color {
+    color: #d97706 !important; /* Golden label text color */
+    font-weight: 900 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes goldGlow {
+    from {
+        transform: scale(1);
+        box-shadow: 0 0 16px rgba(217, 119, 6, 0.4);
+    }
+    to {
+        transform: scale(1.08);
+        box-shadow: 0 0 28px rgba(217, 119, 6, 0.85);
+    }
+}

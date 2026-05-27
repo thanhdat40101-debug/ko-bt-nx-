@@ -830,6 +830,17 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Floating Letter/Envelope Widget -->
+                    <div id="exam-letter-widget" class="exam-letter-widget" onclick="openExamLetter()" style="display: none;">
+                        <div class="envelope-wrapper">
+                            <div class="envelope-body">
+                                <i class="fa-solid fa-envelope-open-text envelope-icon"></i>
+                                <span class="envelope-badge">1</span>
+                            </div>
+                            <span class="envelope-label">Thư gửi Sĩ tử 2026</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Slogan container box with red border -->
@@ -887,6 +898,21 @@
                     </button>
                     <p id="login-error-msg" class="login-error-msg" style="display: none; color: #ef4444; font-size: 12px; font-weight: 600; text-align: center; margin: 4px 0 0;"></p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Exam Letter Modal Popup -->
+        <div id="exam-letter-modal" class="exam-letter-modal-overlay" style="display: none;">
+            <div class="letter-paper">
+                <div class="letter-close-btn" onclick="closeExamLetter()">&times;</div>
+                <div class="letter-header">
+                    <i class="fa-solid fa-heart red-tint pulse-heart"></i>
+                    <h3>Thư Chúc Thi Tốt THPTQG 2026</h3>
+                </div>
+                <div class="letter-body" id="exam-letter-content">
+                    <!-- Dynamic content injected by JS -->
+                </div>
+                <button class="letter-action-btn" onclick="closeExamLetter()">Đã hiểu, tự tin chiến thắng! 🚀</button>
             </div>
         </div>
 
